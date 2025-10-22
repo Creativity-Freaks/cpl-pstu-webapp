@@ -89,7 +89,7 @@ const Register = () => {
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div className="relative hidden lg:block animate-fade-in-up">
               <div className="rounded-2xl overflow-hidden shadow-glow border border-border">
-                <img src={heroImg} className="w-full h-[560px] object-cover" alt="CPL Cricket" />
+                <img src={"src/assets/crick3.jpg"} className="w-full h-[560px] object-cover" alt="CPL Cricket" />
               </div>
               <div className="mt-6">
                 <h2 className="text-3xl font-bold">Join the League</h2>
