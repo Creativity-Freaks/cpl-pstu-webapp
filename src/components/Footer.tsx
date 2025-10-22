@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import logoUrl from "@/assets/cpl2026.jpg";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -9,6 +10,7 @@ const Footer = () => {
     { name: "About", path: "/about" },
     { name: "Team", path: "/team" },
     { name: "Tournament", path: "/tournament" },
+    { name: "Matches", path: "/matches" },
     { name: "Gallery", path: "/gallery" },
     { name: "Contact", path: "/contact" },
   ];
@@ -24,14 +26,21 @@ const Footer = () => {
     <footer className="bg-primary text-primary-foreground pt-16 pb-8">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          {/* Company Info */}
+          {/* Brand & About */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-accent flex items-center justify-center shadow-accent">
-                <span className="text-accent-foreground font-bold text-xl">CPL</span>
+            <Link to="/" className="flex items-center space-x-3 group">
+              <img
+                src={logoUrl}
+                alt="CPL 2026 Logo"
+                className="w-10 h-10 rounded-md ring-2 ring-primary-foreground/20 group-hover:ring-accent transition"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="leading-tight">
+                <div className="font-bold text-lg">CSE Premier League 2026</div>
+                <div className="text-xs text-primary-foreground/70">PSTU CSE Cricket Tournament</div>
               </div>
-              <span className="font-bold text-lg">CSE Premier League</span>
-            </div>
+            </Link>
             <p className="text-primary-foreground/80 text-sm">
               The ultimate cricket tournament for Computer Science & Engineering students at Patuakhali Science and Technology University.
             </p>
@@ -66,14 +75,16 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Company */}
+          {/* Resources */}
           <div>
-            <h3 className="font-bold text-lg mb-4">Company</h3>
+            <h3 className="font-bold text-lg mb-4">Resources</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
               <li><Link to="/about" className="hover:text-accent transition-colors">About Us</Link></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Rules & Regulations</a></li>
+              <li><Link to="/login" className="hover:text-accent transition-colors">Login</Link></li>
+              <li><Link to="/register" className="hover:text-accent transition-colors">Player Registration</Link></li>
+              <li><Link to="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-accent transition-colors">Terms of Service</Link></li>
+              <li><Link to="/rules" className="hover:text-accent transition-colors">Rules & Regulations</Link></li>
             </ul>
           </div>
 

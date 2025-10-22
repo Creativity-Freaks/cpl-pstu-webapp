@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import faviconUrl from "@/assets/favicon.jpg";
+import faviconUrl from "@/assets/cpl2026logo.png";
 
 // Dynamically set favicon from assets so it works with Vite bundling
 (() => {

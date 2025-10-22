@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import logoUrl from "@/assets/cpl2026.jpg";
+import logoUrl from "@/assets/cpl2026logo.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

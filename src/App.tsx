@@ -22,6 +22,9 @@ import ChangePassword from "./pages/ChangePassword";
 import Admin from "./pages/Admin";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import Auction from "./pages/Auction";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import Rules from "./pages/Rules";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -50,6 +53,9 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/change-password" element={<ChangePassword />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/rules" element={<Rules />} />
 
             {/* Protected: Player */}
             <Route element={<ProtectedRoute allowRoles={["player", "admin"]} />}> 
