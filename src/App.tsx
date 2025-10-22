@@ -7,10 +7,18 @@ import Index from "./pages/Index";
 import AboutPage from "./pages/About";
 import Gallery from "./pages/Gallery";
 import TournamentPage from "./pages/TournamentPage";
+import TournamentDetails from "./pages/TournamentDetails";
+import Matches from "./pages/Matches";
+import MatchCenter from "./pages/MatchCenter";
 import Team from "./pages/Team";
+import TeamDepartment from "./pages/TeamDepartment";
 import ContactPage from "./pages/ContactPage";
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import Settings from "./pages/Settings";
+import ChangePassword from "./pages/ChangePassword";
 import Admin from "./pages/Admin";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import Auction from "./pages/Auction";
@@ -31,11 +39,17 @@ const App = () => (
             <Route path="/about" element={<AboutPage />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/tournament" element={<TournamentPage />} />
+            <Route path="/tournament/:id" element={<TournamentDetails />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/match/:tournamentId/:matchId" element={<MatchCenter />} />
             <Route path="/team" element={<Team />} />
+            <Route path="/team/:dept" element={<TeamDepartment />} />
             <Route path="/contact" element={<ContactPage />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Navigate to="/auth?tab=login" replace />} />
-            <Route path="/register" element={<Navigate to="/auth?tab=register" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/change-password" element={<ChangePassword />} />
 
             {/* Protected: Player */}
             <Route element={<ProtectedRoute allowRoles={["player", "admin"]} />}> 

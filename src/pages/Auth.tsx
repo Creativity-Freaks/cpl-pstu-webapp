@@ -5,23 +5,52 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Removed role Select: admin is determined by email
 import { useAuth } from "@/context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
+import heroImg from "@/assets/hero-cricket.jpg";
+import { Switch } from "@/components/ui/switch";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const Auth = () => {
-  const [loginData, setLoginData] = useState({ email: "", password: "", role: "player" as "player" | "admin" });
-  const [registerData, setRegisterData] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    confirmPassword: "",
-    avatar: "" as string
+  // Schemas
+  const loginSchema = z.object({
+    email: z.string().email("Enter a valid email"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    remember: z.boolean().optional(),
   });
+  type LoginFormValues = z.infer<typeof loginSchema>;
+
+  const registerSchema = z
+    .object({
+      name: z.string().min(2, "Name is too short"),
+      email: z.string().email("Enter a valid email"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      confirmPassword: z.string().min(6, "Confirm your password"),
+      avatar: z.string().optional(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      path: ["confirmPassword"],
+      message: "Passwords don't match",
+    });
+  type RegisterFormValues = z.infer<typeof registerSchema>;
+
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "", remember: true },
+  });
+
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "", avatar: "" },
+  });
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { user, login, register } = useAuth();
   const navigate = useNavigate();
@@ -39,31 +68,25 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = loginForm.handleSubmit(async (values) => {
     try {
-      await login({ email: loginData.email, password: loginData.password, role: loginData.role });
+      const u = await login({ email: values.email, password: values.password });
       toast.success("Logged in successfully");
-      navigate(loginData.role === "admin" ? "/admin" : "/dashboard");
-    } catch (err) {
+      navigate(u.role === "admin" ? "/admin" : "/dashboard");
+    } catch {
       toast.error("Login failed");
     }
-  };
+  });
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (registerData.password !== registerData.confirmPassword) {
-      toast.error("Passwords don't match!");
-      return;
-    }
+  const handleRegister = registerForm.handleSubmit(async (values) => {
     try {
-      await register({ name: registerData.name, email: registerData.email, password: registerData.password, avatar: registerData.avatar });
+      await register({ name: values.name, email: values.email, password: values.password, avatar: values.avatar });
       toast.success("Registration successful");
       navigate("/dashboard");
-    } catch (err) {
+    } catch {
       toast.error("Registration failed");
     }
-  };
+  });
 
   const onPickAvatar = () => fileInputRef.current?.click();
   const onAvatarChosen: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -76,7 +99,7 @@ const Auth = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      setRegisterData((d) => ({ ...d, avatar: result }));
+      registerForm.setValue("avatar", result, { shouldDirty: true, shouldValidate: false });
     };
     reader.readAsDataURL(file);
   };
@@ -86,130 +109,151 @@ const Auth = () => {
       <Navbar />
       <main className="pt-24 pb-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-md mx-auto animate-fade-in-up">
-            <Card className="border-border shadow-glow">
-              <CardHeader className="text-center">
-                <CardTitle className="text-3xl">Welcome to CPL</CardTitle>
-                <CardDescription>Login or create an account to continue</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue={defaultTab}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="login">Login</TabsTrigger>
-                    <TabsTrigger value="register">Register</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="login">
-                    <form onSubmit={handleLogin} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="login-email">Email</Label>
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="your.email@pstu.ac.bd"
-                          value={loginData.email}
-                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="login-role">Role</Label>
-                        <Select value={loginData.role} onValueChange={(v: "player" | "admin") => setLoginData({ ...loginData, role: v })}>
-                          <SelectTrigger id="login-role">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="player">Player</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="login-password">Password</Label>
-                        <Input
-                          id="login-password"
-                          type="password"
-                          value={loginData.password}
-                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full bg-gradient-accent shadow-accent">
-                        Login
-                      </Button>
-                    </form>
-                  </TabsContent>
-                  
-                  <TabsContent value="register">
-                    <form onSubmit={handleRegister} className="space-y-4">
-                      {/* Avatar picker */}
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="relative">
-                          <Avatar className="h-20 w-20">
-                            <AvatarImage src={registerData.avatar} alt={registerData.name || "avatar"} />
-                            <AvatarFallback>{(registerData.name || "P").slice(0,2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <button
-                            type="button"
-                            onClick={onPickAvatar}
-                            className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-accent"
-                            aria-label="Change avatar"
-                          >
-                            <Camera className="h-4 w-4" />
-                          </button>
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            {/* Visual sports panel */}
+            <div className="relative hidden lg:block animate-fade-in-up">
+              <div className="rounded-2xl overflow-hidden shadow-glow border border-border">
+                <img src={heroImg} className="w-full h-[520px] object-cover" alt="CPL Cricket" />
+              </div>
+              <div className="mt-6">
+                <h2 className="text-3xl font-bold">Play. Compete. Rise.</h2>
+                <p className="text-muted-foreground max-w-md mt-2">Join CPL at PSTU — where coding minds meet cricketing spirit. Register as a player and get into the action.</p>
+              </div>
+            </div>
+
+            {/* Auth card */}
+            <div className="max-w-md w-full mx-auto animate-fade-in-up">
+              <Card className="border-border shadow-glow">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-3xl">Welcome to CPL</CardTitle>
+                  <CardDescription>Login or create an account to continue</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue={defaultTab}>
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                      <TabsTrigger value="login">Login</TabsTrigger>
+                      <TabsTrigger value="register">Register</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="login">
+                      <form onSubmit={handleLogin} className="space-y-5">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email">Email</Label>
+                          <Input
+                            id="login-email"
+                            type="email"
+                            placeholder="your.email@pstu.ac.bd"
+                            {...loginForm.register("email")}
+                            required
+                          />
+                          {loginForm.formState.errors.email && (
+                            <p className="text-xs text-red-500">{loginForm.formState.errors.email.message}</p>
+                          )}
                         </div>
-                        <input ref={fileInputRef} onChange={onAvatarChosen} type="file" accept="image/*" className="hidden" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-name">Full Name</Label>
-                        <Input
-                          id="register-name"
-                          type="text"
-                          placeholder="Your full name"
-                          value={registerData.name}
-                          onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-email">Email</Label>
-                        <Input
-                          id="register-email"
-                          type="email"
-                          placeholder="your.email@pstu.ac.bd"
-                          value={registerData.email}
-                          onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-password">Password</Label>
-                        <Input
-                          id="register-password"
-                          type="password"
-                          value={registerData.password}
-                          onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-confirm">Confirm Password</Label>
-                        <Input
-                          id="register-confirm"
-                          type="password"
-                          value={registerData.confirmPassword}
-                          onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full bg-gradient-accent shadow-accent">
-                        Create Account
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+                        <div className="space-y-2">
+                          <Label htmlFor="login-password">Password</Label>
+                          <Input
+                            id="login-password"
+                            type="password"
+                            {...loginForm.register("password")}
+                            required
+                          />
+                          {loginForm.formState.errors.password && (
+                            <p className="text-xs text-red-500">{loginForm.formState.errors.password.message}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Switch checked={!!loginForm.watch("remember")} onCheckedChange={(v) => loginForm.setValue("remember", v)} />
+                            Remember me
+                          </label>
+                          <button type="button" className="text-sm text-accent hover:underline">Forgot password?</button>
+                        </div>
+                        <Button type="submit" className="w-full bg-gradient-accent shadow-accent">
+                          Login
+                        </Button>
+                      </form>
+                    </TabsContent>
+
+                    <TabsContent value="register">
+                      <form onSubmit={handleRegister} className="space-y-5">
+                        {/* Avatar picker */}
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="relative">
+                            <Avatar className="h-20 w-20">
+                              <AvatarImage src={registerForm.watch("avatar") || ""} alt={registerForm.watch("name") || "avatar"} />
+                              <AvatarFallback>{(registerForm.watch("name") || "P").slice(0,2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <button
+                              type="button"
+                              onClick={onPickAvatar}
+                              className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-accent"
+                              aria-label="Change avatar"
+                            >
+                              <Camera className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <input ref={fileInputRef} onChange={onAvatarChosen} type="file" accept="image/*" className="hidden" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-name">Full Name</Label>
+                          <Input
+                            id="register-name"
+                            type="text"
+                            placeholder="Your full name"
+                            {...registerForm.register("name")}
+                            required
+                          />
+                          {registerForm.formState.errors.name && (
+                            <p className="text-xs text-red-500">{registerForm.formState.errors.name.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-email">Email</Label>
+                          <Input
+                            id="register-email"
+                            type="email"
+                            placeholder="your.email@pstu.ac.bd"
+                            {...registerForm.register("email")}
+                            required
+                          />
+                          {registerForm.formState.errors.email && (
+                            <p className="text-xs text-red-500">{registerForm.formState.errors.email.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-password">Password</Label>
+                          <Input
+                            id="register-password"
+                            type="password"
+                            {...registerForm.register("password")}
+                            required
+                          />
+                          {registerForm.formState.errors.password && (
+                            <p className="text-xs text-red-500">{registerForm.formState.errors.password.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-confirm">Confirm Password</Label>
+                          <Input
+                            id="register-confirm"
+                            type="password"
+                            {...registerForm.register("confirmPassword")}
+                            required
+                          />
+                          {registerForm.formState.errors.confirmPassword && (
+                            <p className="text-xs text-red-500">{registerForm.formState.errors.confirmPassword.message}</p>
+                          )}
+                        </div>
+                        <Button type="submit" className="w-full bg-gradient-accent shadow-accent">
+                          Create Account
+                        </Button>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>

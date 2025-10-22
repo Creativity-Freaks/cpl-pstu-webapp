@@ -1,20 +1,32 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, User, Settings, KeyRound, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
     { name: "Team", path: "/team" },
     { name: "Tournament", path: "/tournament" },
+    { name: "Matches", path: "/matches" },
     { name: "Gallery", path: "/gallery" },
     { name: "Contact", path: "/contact" },
   ];
@@ -55,23 +67,49 @@ const Navbar = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-2">
             {!user ? (
-              <Link to="/auth">
+              <Link to="/login">
                 <Button variant="default" className="bg-gradient-accent shadow-accent">
                   Login
                 </Button>
               </Link>
             ) : (
-              <>
-                <Link to={user.role === "admin" ? "/admin" : "/dashboard"}>
-                  <Button variant="default" className="bg-gradient-accent shadow-accent">
-                    {user.role === "admin" ? "Admin" : "Dashboard"}
-                  </Button>
-                </Link>
-                <Button variant="outline" onClick={logout} className="flex items-center gap-2">
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.avatar || ""} alt={user.name} />
+                      <AvatarFallback>{user.name?.slice(0,2).toUpperCase() || "U"}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {user.role === "admin" && (
+                    <DropdownMenuItem onClick={() => navigate("/admin")} className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" /> Admin Panel
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")} className="flex items-center gap-2">
+                    <User className="h-4 w-4" /> Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")} className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" /> Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/change-password")} className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4" /> Change Password
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600">
+                    <LogOut className="h-4 w-4" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
@@ -103,21 +141,42 @@ const Navbar = () => {
                 </Link>
               ))}
               {!user ? (
-                <Link to="/auth" onClick={() => setIsOpen(false)}>
+                <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="default" className="w-full bg-gradient-accent">
                     Login
                   </Button>
                 </Link>
               ) : (
-                <div className="flex gap-2">
-                  <Link to={user.role === "admin" ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="flex-1">
-                    <Button variant="default" className="w-full bg-gradient-accent">
-                      {user.role === "admin" ? "Admin" : "Dashboard"}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 px-2">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.avatar || ''} alt={user.name} />
+                      <AvatarFallback>{user.name?.slice(0,2).toUpperCase() || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-semibold">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {user.role === 'admin' && (
+                      <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/admin'); }}>
+                        Admin
+                      </Button>
+                    )}
+                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/dashboard'); }}>
+                      Profile
                     </Button>
-                  </Link>
-                  <Button variant="outline" className="flex-1" onClick={() => { logout(); setIsOpen(false); }}>
-                    Logout
-                  </Button>
+                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/settings'); }}>
+                      Settings
+                    </Button>
+                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/change-password'); }}>
+                      Change Pass
+                    </Button>
+                    <Button variant="outline" onClick={() => { logout(); setIsOpen(false); }} className="col-span-2">
+                      <LogOut className="h-4 w-4 mr-2" /> Logout
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

@@ -16,8 +16,8 @@ A React + TypeScript + Tailwind CSS single-page app for CSE Premier League (CPL)
   - Home: Hero, About, Stats (count), Tournament teaser, Gallery (video + image), Testimonials, Sponsors, FAQ, Contact, Footer
   - About, Team, Tournament, Gallery, Contact
 - Auth and roles (mock/demo)
-  - Login (choose role: player/admin)
-  - Registration (player)
+  - Login (no role selection; admin inferred by email)
+  - Registration (always Player)
   - Role-based protected routes
   - Admin Dashboard and Player Dashboard
   - Hidden Auction page (admin-only, not in navbar)
@@ -65,6 +65,7 @@ Role access:
 
 - Player: can open `/dashboard`
 - Admin: can open `/admin` and `/admin/auction`
+  - Admin is determined by allowed admin emails (see `src/config/auth.ts`) or your backend logic.
 
 ### Notes and next steps
 

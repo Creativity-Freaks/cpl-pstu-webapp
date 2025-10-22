@@ -39,7 +39,7 @@ const Hero = () => {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link to="/auth">
+            <Link to="/register">
               <Button 
                 size="lg" 
                 className="bg-accent hover:bg-accent-glow text-accent-foreground shadow-accent text-lg px-8 py-6 animate-pulse-glow"
@@ -52,7 +52,7 @@ const Hero = () => {
               <Button 
                 size="lg" 
                 variant="outline"
-                className="border-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 backdrop-blur-sm text-lg px-8 py-6"
+                className="border-2 border-primary-foreground/30 text-black hover:bg-primary-foreground/10 backdrop-blur-sm text-lg px-8 py-6"
               >
                 <Trophy className="mr-2 h-5 w-5" />
                 View Tournaments

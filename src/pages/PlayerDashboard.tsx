@@ -37,6 +37,8 @@ const PlayerDashboard = () => {
                 <p><span className="text-muted-foreground">Name:</span> {user?.name}</p>
                 <p><span className="text-muted-foreground">Email:</span> {user?.email}</p>
                 <p><span className="text-muted-foreground">Role:</span> {user?.role}</p>
+                {user?.session && <p><span className="text-muted-foreground">Session:</span> {user.session}</p>}
+                {user?.playerType && <p><span className="text-muted-foreground">Player Type:</span> {user.playerType}</p>}
               </CardContent>
             </Card>
 

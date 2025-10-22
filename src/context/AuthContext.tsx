@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { isAdminEmail } from "@/config/auth";
 
 export type Role = "admin" | "player";
 
@@ -8,14 +9,17 @@ export type AuthUser = {
   email: string;
   role: Role;
   avatar?: string; // data URL or remote URL
+  session?: string;
+  playerType?: "Batsman" | "Bowler" | "All-Rounder" | "Wicket-Keeper" | string;
 };
 
 type AuthContextType = {
   user: AuthUser | null;
   loading: boolean;
-  login: (params: { email: string; password: string; role: Role; name?: string }) => Promise<void>;
-  register: (params: { name: string; email: string; password: string; avatar?: string }) => Promise<void>;
+  login: (params: { email: string; password: string; name?: string }) => Promise<AuthUser>;
+  register: (params: { name: string; email: string; password: string; avatar?: string; session?: string; playerType?: AuthUser["playerType"] }) => Promise<AuthUser>;
   logout: () => void;
+  updateUser: (patch: Partial<AuthUser>) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,21 +49,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     else localStorage.removeItem(STORAGE_KEY);
   };
 
-  const login: AuthContextType["login"] = useCallback(async ({ email, password, role, name }) => {
+  const login: AuthContextType["login"] = useCallback(async ({ email, password, name }) => {
     // Mock auth: accept any email/password; assign role selected
     await new Promise((r) => setTimeout(r, 400));
     const derivedName = name || email.split("@")[0];
+    const role: Role = isAdminEmail(email) ? "admin" : "player";
     const u: AuthUser = { name: derivedName, email, role };
     setUser(u);
     persist(u);
+    return u;
   }, []);
 
-  const register: AuthContextType["register"] = useCallback(async ({ name, email, password, avatar }) => {
+  const register: AuthContextType["register"] = useCallback(async ({ name, email, password, avatar, session, playerType }) => {
     // Mock register: create a player user
     await new Promise((r) => setTimeout(r, 500));
-    const u: AuthUser = { name, email, role: "player", avatar };
+    const u: AuthUser = { name, email, role: "player", avatar, session, playerType };
     setUser(u);
     persist(u);
+    return u;
   }, []);
 
   const logout = useCallback(() => {
@@ -67,9 +74,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     persist(null);
   }, []);
 
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const u: AuthUser = { ...prev, ...patch };
+      persist(u);
+      return u;
+    });
+  }, []);
+
   const value = useMemo<AuthContextType>(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout]
+    () => ({ user, loading, login, register, logout, updateUser }),
+    [user, loading, login, register, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
