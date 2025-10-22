@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import logoUrl from "@/assets/cpl2026.jpg";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,9 +40,11 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 rounded-lg bg-gradient-hero flex items-center justify-center shadow-glow transition-transform group-hover:scale-110">
-              <span className="text-primary-foreground font-bold text-xl">CPL</span>
-            </div>
+            <img
+              src={logoUrl}
+              alt="CPL 2026 Logo"
+              className="h-10 w-10 rounded-md object-cover shadow-glow transition-transform group-hover:scale-110"
+            />
             <span className="font-bold text-lg text-foreground hidden sm:block">
               CSE Premier League
             </span>
