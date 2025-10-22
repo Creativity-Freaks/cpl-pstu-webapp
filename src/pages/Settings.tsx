@@ -72,6 +72,27 @@ const Settings = () => {
                   </div>
                 </div>
 
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semester</Label>
+                    <Input id="semester" placeholder="e.g., 3rd" defaultValue={user.semester || ''} onBlur={(e) => updateUser({ semester: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Input id="paymentMethod" placeholder="e.g., bKash" defaultValue={user.paymentMethod || ''} onBlur={(e) => updateUser({ paymentMethod: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentNumber">Payment Number</Label>
+                    <Input id="paymentNumber" placeholder="01XXXXXXXXX" defaultValue={user.paymentNumber || ''} onBlur={(e) => updateUser({ paymentNumber: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transactionId">Transaction ID</Label>
+                    <Input id="transactionId" placeholder="TX1234ABCD" defaultValue={user.transactionId || ''} onBlur={(e) => updateUser({ transactionId: e.target.value })} />
+                  </div>
+                </div>
+
                 <div>
                   <Button className="bg-gradient-accent" onClick={() => toast.success("Saved changes")}>Save Changes</Button>
                 </div>

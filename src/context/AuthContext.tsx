@@ -11,13 +11,17 @@ export type AuthUser = {
   avatar?: string; // data URL or remote URL
   session?: string;
   playerType?: "Batsman" | "Bowler" | "All-Rounder" | "Wicket-Keeper" | string;
+  semester?: string;
+  paymentMethod?: "Bkash" | "Nagad" | "Rocket" | "Cash" | "Bank" | string;
+  transactionId?: string;
+  paymentNumber?: string;
 };
 
 type AuthContextType = {
   user: AuthUser | null;
   loading: boolean;
   login: (params: { email: string; password: string; name?: string }) => Promise<AuthUser>;
-  register: (params: { name: string; email: string; password: string; avatar?: string; session?: string; playerType?: AuthUser["playerType"] }) => Promise<AuthUser>;
+  register: (params: { name: string; email: string; password: string; avatar?: string; session?: string; playerType?: AuthUser["playerType"]; semester?: string; paymentMethod?: AuthUser["paymentMethod"]; transactionId?: string; paymentNumber?: string }) => Promise<AuthUser>;
   logout: () => void;
   updateUser: (patch: Partial<AuthUser>) => void;
 };
@@ -60,10 +64,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return u;
   }, []);
 
-  const register: AuthContextType["register"] = useCallback(async ({ name, email, password, avatar, session, playerType }) => {
+  const register: AuthContextType["register"] = useCallback(async ({ name, email, password, avatar, session, playerType, semester, paymentMethod, transactionId, paymentNumber }) => {
     // Mock register: create a player user
     await new Promise((r) => setTimeout(r, 500));
-    const u: AuthUser = { name, email, role: "player", avatar, session, playerType };
+    const u: AuthUser = { name, email, role: "player", avatar, session, playerType, semester, paymentMethod, transactionId, paymentNumber };
     setUser(u);
     persist(u);
     return u;

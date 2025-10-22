@@ -15,7 +15,7 @@ import TeamDepartment from "./pages/TeamDepartment";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Register from "./pages/RegisterPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import Settings from "./pages/Settings";
 import ChangePassword from "./pages/ChangePassword";
