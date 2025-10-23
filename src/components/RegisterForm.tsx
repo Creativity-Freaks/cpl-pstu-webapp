@@ -28,7 +28,7 @@ const schema = z
     paymentNumber: z.string().min(1, "Payment number is required"),
     transactionId: z.string().min(1, "Transaction ID is required"),
     session: z.string().min(1, "Session is required"),
-    avatar: z.string().min(1, "Avatar is required"),
+    avatar: z.string().optional(),
   })
   .refine((d) => d.password === d.confirmPassword, { path: ["confirmPassword"], message: "Passwords don't match" });
 
@@ -44,7 +44,10 @@ const RegisterForm: React.FC<Props> = ({ compact = false, onSuccess }) => {
   const onAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!f.type.startsWith("image/")) return toast.error("Select an image");
+    // Accept common image MIME types. If the browser doesn't provide a proper
+    // MIME type, still attempt to read the file as a data URL to allow uploads
+    // for various image formats.
+    if (f.type && !f.type.startsWith("image/")) return toast.error("Select an image file");
     const reader = new FileReader();
     reader.onload = () => form.setValue("avatar", reader.result as string);
     reader.readAsDataURL(f);
@@ -100,7 +103,7 @@ const RegisterForm: React.FC<Props> = ({ compact = false, onSuccess }) => {
                     <Camera className="h-4 w-4" />
                   </button>
                 </div>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} required aria-required />
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} aria-hidden />
               </div>
 
               <div className="space-y-1">

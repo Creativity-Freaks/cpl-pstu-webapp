@@ -50,7 +50,11 @@ app.post('/api/create-profile', async (req, res) => {
       const parsed = dataUrlToBuffer(avatar);
       if (parsed) {
         const ext = (parsed.mime.split('/')[1] || 'png').replace(/[^a-z0-9]/gi, '');
-        const filename = `avatars/${id}/${Date.now()}.${ext}`;
+  // Do not include the bucket name in the object path. The bucket is
+  // specified separately when calling storage.from(bucket). Use a
+  // per-user folder so storage policies (which check the object name
+  // prefix) can be enforced.
+  const filename = `${id}/${Date.now()}.${ext}`;
         // upload buffer to storage
         const { error: upErr } = await svc.storage.from(DEFAULT_BUCKET).upload(filename, parsed.buffer, { upsert: true, contentType: parsed.mime });
         if (upErr) {

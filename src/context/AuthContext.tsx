@@ -102,8 +102,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // convert dataURL to Blob
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const ext = blob.type.split('/')[1] || 'png';
-      const filename = `avatars/${userId}/${Date.now()}.${ext}`;
+  const ext = blob.type.split('/')[1] || 'png';
+  // Store objects under a user folder inside the bucket. The bucket name is
+  // provided separately to supabase.storage.from(bucket) so the object key
+  // should not repeat the bucket name. Use `<userId>/...` so storage policies
+  // that check the object name prefix (auth.uid()) work correctly.
+  const filename = `${userId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from(bucket).upload(filename, blob as unknown as File, { upsert: true });
       if (upErr) {
         console.error('Avatar upload failed', upErr.message || upErr);

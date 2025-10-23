@@ -83,7 +83,6 @@ Two modes are supported:
 Role access:
 
 - Player: can open `/dashboard`
-- Admin: can open `/admin` and `/admin/auction`
 - Add forms and flows for team registration and tournament management.
 - Add tests and CI.
 

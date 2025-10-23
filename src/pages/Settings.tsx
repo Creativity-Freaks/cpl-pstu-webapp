@@ -6,27 +6,70 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/useAuth";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 const Settings = () => {
   const { user, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  if (!user) return null;
+  const [name, setName] = useState(user?.name || '');
+  const [sessionVal, setSessionVal] = useState(user.session || "");
+  const [playerTypeVal, setPlayerTypeVal] = useState(user.playerType || "");
+  const [semesterVal, setSemesterVal] = useState(user.semester || "");
+  const [paymentMethodVal, setPaymentMethodVal] = useState(user.paymentMethod || "");
+  const [paymentNumberVal, setPaymentNumberVal] = useState(user.paymentNumber || "");
+  const [transactionIdVal, setTransactionIdVal] = useState(user.transactionId || "");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar || null);
+  const [saving, setSaving] = useState(false);
 
   const onPickAvatar = () => fileInputRef.current?.click();
-  const onAvatarChosen: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  const onAvatarChosen: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (file.type && !file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => updateUser({ avatar: reader.result as string });
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setAvatarPreview(dataUrl);
+      try {
+        await updateUser({ avatar: dataUrl });
+        toast.success("Avatar updated");
+      } catch (err) {
+        console.error(err);
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(msg || "Failed to upload avatar");
+      }
+    };
     reader.readAsDataURL(file);
   };
+
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      await updateUser({
+        name,
+        session: sessionVal,
+        playerType: playerTypeVal,
+        semester: semesterVal,
+        paymentMethod: paymentMethodVal,
+        paymentNumber: paymentNumberVal,
+        transactionId: transactionIdVal,
+      });
+      toast.success("Profile updated");
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen">
