@@ -57,20 +57,33 @@ npm run dev
 
 This project ships with a lightweight, client-side mock auth:
 
-- Login: pick a role (Player/Admin) and any email/password.
-- Registration creates a Player account directly.
-- Session is stored in localStorage; click Logout to clear.
+Role access:
+
+- Admin is determined by allowed admin emails (see `src/config/auth.ts`) or your backend logic.
+
+### Auth
+
+Two modes are supported:
+
+1. Simple client-only mode (no backend):
+
+- Configure env vars in your `.env` file:
+  - `VITE_ADMIN_EMAILS` (comma-separated) or `VITE_ADMIN_EMAIL`
+  - `VITE_ADMIN_PASSWORD` (shared admin password)
+- When `VITE_ADMIN_PASSWORD` is set, the app bypasses Supabase and stores sessions in localStorage.
+- Login: users enter email/password; if email is admin and password matches `VITE_ADMIN_PASSWORD`, role is admin; otherwise player.
+
+2. Supabase mode:
+
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+- Email/password auth with profile upsert and optional avatar upload to `avatars` bucket.
+
+### Notes and next steps
 
 Role access:
 
 - Player: can open `/dashboard`
 - Admin: can open `/admin` and `/admin/auction`
-  - Admin is determined by allowed admin emails (see `src/config/auth.ts`) or your backend logic.
-
-### Notes and next steps
-
-- Replace the mock auth with a real backend (JWT/OAuth) and persist sessions securely.
-- Wire tournaments, teams, and gallery to real APIs or a CMS.
 - Add forms and flows for team registration and tournament management.
 - Add tests and CI.
 

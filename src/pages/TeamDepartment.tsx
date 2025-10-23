@@ -4,12 +4,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { departments, DepartmentKey } from "@/data/teams";
+import { useEffect, useState } from "react";
+import { fetchDepartmentTeam } from "@/lib/api";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Users, Trophy } from "lucide-react";
 
 const TeamDepartmentPage = () => {
   const { dept } = useParams<{ dept: DepartmentKey }>();
-  const data = dept && departments[dept as DepartmentKey];
+  const staticData = dept && departments[dept as DepartmentKey];
+  const [data, setData] = useState(staticData || null);
+
+  useEffect(() => {
+    if (!dept) return;
+    fetchDepartmentTeam(dept as DepartmentKey).then((dyn) => {
+      if (dyn) setData(dyn);
+    }).catch(() => void 0);
+  }, [dept]);
 
   return (
     <div className="min-h-screen">

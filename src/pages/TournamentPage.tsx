@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { tournaments, Tournament } from "@/data/tournaments";
+import { useEffect, useState } from "react";
+
 
 const TournamentPage = () => {
-  const currentTournaments = tournaments.filter((t) => t.status === "Live");
-  const upcomingTournaments = tournaments.filter((t) => t.status === "Upcoming");
-  const pastTournaments = tournaments.filter((t) => t.status === "Completed");
+  // Using static tournaments data for now
+  const source = tournaments;
+  const currentTournaments = source.filter((t) => t.status === "Live");
+  const upcomingTournaments = source.filter((t) => t.status === "Upcoming");
+  const pastTournaments = source.filter((t) => t.status === "Completed");
 
   const renderTournamentCard = (tournament: Tournament, index: number) => (
     <Card 

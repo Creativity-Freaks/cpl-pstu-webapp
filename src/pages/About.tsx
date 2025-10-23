@@ -31,7 +31,7 @@ const AboutPage = () => {
             </p>
             <div className="mt-8 flex flex-wrap gap-3 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
               <Button asChild className="bg-gradient-accent shadow-accent">
-                <Link to="/register">Register as Player</Link>
+                <a href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab: 'register' } })); }}>Register as Player</a>
               </Button>
               <Button asChild variant="outline" className="border-border">
                 <Link to="/team">Meet the Teams</Link>

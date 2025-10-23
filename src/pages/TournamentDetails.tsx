@@ -3,14 +3,29 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, MapPin, Users, Trophy } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
-import { getTournament } from "@/data/tournaments";
+import { getTournament, Tournament } from "@/data/tournaments";
 import { Button } from "@/components/ui/button";
 import PointsTable from "@/components/PointsTable";
 import LeaderboardsWidget from "@/components/LeaderboardsWidget";
+import { useEffect, useState } from "react";
+import { fetchTournamentById, UITournament } from "@/lib/api";
 
 const TournamentDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const data = id ? getTournament(id) : undefined;
+  const [dyn, setDyn] = useState<UITournament | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchTournamentById(id).then((t) => {
+      if (t) setDyn(t);
+    });
+  }, [id]);
+
+  const data = id ? (dyn || getTournament(id)) : undefined;
+
+  const isStaticTournament = (d: unknown): d is Tournament => {
+    return !!d && typeof d === "object" && "matches" in (d as Record<string, unknown>);
+  };
 
   if (!data) {
     return (
@@ -133,7 +148,7 @@ const TournamentDetails = () => {
               </CardContent>
             </Card>
 
-            {data.status === 'Completed' && (data.champion || data.runnerUp) && (
+            {data.status === 'Completed' && isStaticTournament(data) && (data.champion || data.runnerUp) && (
               <Card id="champions" className="border-border">
                 <CardHeader>
                   <CardTitle className="text-2xl">Champions & Runner-up</CardTitle>

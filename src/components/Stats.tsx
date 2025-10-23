@@ -28,11 +28,11 @@ const Stats = () => {
     return () => observer.disconnect();
   }, []);
 
-  const Counter = ({ end, duration, suffix }: { end: number; duration: number; suffix: string }) => {
+  const Counter = ({ end, duration, suffix, visible }: { end: number; duration: number; suffix: string; visible: boolean }) => {
     const [count, setCount] = useState(0);
 
     useEffect(() => {
-      if (!isVisible) return;
+      if (!visible) return;
 
       const startTime = Date.now();
       const timer = setInterval(() => {
@@ -46,7 +46,7 @@ const Stats = () => {
       }, 16);
 
       return () => clearInterval(timer);
-    }, [isVisible, end, duration]);
+    }, [visible, end, duration]);
 
     return (
       <span className="text-5xl md:text-6xl font-bold text-accent">
@@ -65,7 +65,7 @@ const Stats = () => {
               className="text-center space-y-2 animate-fade-in-up"
               style={{ animationDelay: `${index * 0.15}s` }}
             >
-              <Counter end={stat.value} duration={stat.duration} suffix={stat.suffix} />
+              <Counter end={stat.value} duration={stat.duration} suffix={stat.suffix} visible={isVisible} />
               <p className="text-primary-foreground text-lg font-medium">{stat.label}</p>
             </div>
           ))}

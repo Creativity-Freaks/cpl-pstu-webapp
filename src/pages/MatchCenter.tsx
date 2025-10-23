@@ -8,11 +8,26 @@ import PointsTable from "@/components/PointsTable";
 import LeaderboardsWidget from "@/components/LeaderboardsWidget";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from "react";
+import { fetchMatchById } from "@/lib/api";
 
 const MatchCenter = () => {
   const { tournamentId, matchId } = useParams<{ tournamentId: string; matchId: string }>();
-  const tournament = tournamentId ? getTournament(tournamentId) : undefined;
-  const match = tournament?.matches.find((m) => m.id === matchId);
+  const staticTournament = tournamentId ? getTournament(tournamentId) : undefined;
+  const staticMatch = staticTournament?.matches.find((m) => m.id === matchId);
+  const [tournament, setTournament] = useState(staticTournament || null);
+  const [tournamentTitle, setTournamentTitle] = useState<string>(staticTournament?.title || "Tournament");
+  const [match, setMatch] = useState(staticMatch || null);
+
+  useEffect(() => {
+    if (!tournamentId || !matchId) return;
+    fetchMatchById(tournamentId, matchId).then((res) => {
+      if (res) {
+        setTournamentTitle(res.tournamentTitle);
+        setMatch(res.match);
+      }
+    }).catch(() => void 0);
+  }, [tournamentId, matchId, staticTournament]);
 
   if (!tournament || !match) {
     return (
@@ -45,7 +60,7 @@ const MatchCenter = () => {
           <div className="max-w-5xl mx-auto mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
               <span className={`px-2.5 py-1 rounded-full text-xs font-medium text-white ${tournament.statusColor}`}>{tournament.status}</span>
-              <span className="text-sm text-muted-foreground">{tournament.title}</span>
+              <span className="text-sm text-muted-foreground">{tournamentTitle}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold">
               {match.teamA.name} vs {match.teamB.name}

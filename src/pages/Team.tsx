@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { departmentList } from "@/data/teams";
+import { useEffect, useState } from "react";
+import { fetchTeamsOverview, UITeamOverview } from "@/lib/api";
 import { Link } from "react-router-dom";
 import { Cpu, Radio, Wrench, Zap, Sigma } from "lucide-react";
 
@@ -15,6 +17,16 @@ const TeamPage = () => {
     eee: Zap,
     mathematics: Sigma,
   };
+
+  const [items, setItems] = useState(departmentList.map((d) => ({ key: d.key, short: d.short, description: d.description, players: d.players.length })));
+
+  useEffect(() => {
+    fetchTeamsOverview().then((rows) => {
+      if (rows && rows.length) {
+        setItems(rows.map((r) => ({ key: r.key, short: r.short, description: r.description || "", players: r.playersCount })));
+      }
+    }).catch(() => void 0);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -29,7 +41,7 @@ const TeamPage = () => {
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {departmentList.map((dept, index) => {
+            {items.map((dept, index) => {
               const Icon = icons[dept.key] ?? Cpu;
               return (
                 <Card
@@ -48,7 +60,7 @@ const TeamPage = () => {
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">{dept.description}</p>
                     <div className="flex justify-between items-center">
-                      <p className="text-xs text-muted-foreground">Players: {dept.players.length}</p>
+                      <p className="text-xs text-muted-foreground">Players: {dept.players}</p>
                       <Button asChild size="sm" className="bg-gradient-accent shadow-accent">
                         <Link to={`/team/${dept.key}`}>View details</Link>
                       </Button>

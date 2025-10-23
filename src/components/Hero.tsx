@@ -39,7 +39,7 @@ const Hero = () => {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link to="/register">
+            <a href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab: 'register' } })); }}>
               <Button 
                 size="lg" 
                 className="bg-accent hover:bg-accent-glow text-accent-foreground shadow-accent text-lg px-8 py-6 animate-pulse-glow"
@@ -47,7 +47,7 @@ const Hero = () => {
                 Register Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </Link>
+            </a>
             <Link to="/tournament">
               <Button 
                 size="lg" 

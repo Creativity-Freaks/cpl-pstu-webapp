@@ -80,8 +80,24 @@ const Footer = () => {
             <h3 className="font-bold text-lg mb-4">Resources</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
               <li><Link to="/about" className="hover:text-accent transition-colors">About Us</Link></li>
-              <li><Link to="/login" className="hover:text-accent transition-colors">Login</Link></li>
-              <li><Link to="/register" className="hover:text-accent transition-colors">Player Registration</Link></li>
+              <li>
+                <a
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab: 'login' } })); }}
+                  className="hover:text-accent transition-colors"
+                >
+                  Login
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab: 'register' } })); }}
+                  className="hover:text-accent transition-colors"
+                >
+                  Player Registration
+                </a>
+              </li>
               <li><Link to="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-accent transition-colors">Terms of Service</Link></li>
               <li><Link to="/rules" className="hover:text-accent transition-colors">Rules & Regulations</Link></li>

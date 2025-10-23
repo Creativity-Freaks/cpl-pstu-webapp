@@ -2,7 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Menu, X, LogOut, User, Settings, KeyRound, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
+import LoginModal from "./LoginModal";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import logoUrl from "@/assets/cpl2026logo.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const location = useLocation();
 
   const { user, logout } = useAuth();
@@ -70,11 +72,12 @@ const Navbar = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-2">
             {!user ? (
-              <Link to="/login">
-                <Button variant="default" className="bg-gradient-accent shadow-accent">
+              <>
+                <Button variant="default" className="bg-gradient-accent shadow-accent" onClick={() => setLoginOpen(true)}>
                   Login
                 </Button>
-              </Link>
+                <LoginModal open={loginOpen} setOpen={setLoginOpen} />
+              </>
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -144,11 +147,12 @@ const Navbar = () => {
                 </Link>
               ))}
               {!user ? (
-                <Link to="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="default" className="w-full bg-gradient-accent">
+                <>
+                  <Button variant="default" className="w-full bg-gradient-accent" onClick={() => { setIsOpen(false); setLoginOpen(true); }}>
                     Login
                   </Button>
-                </Link>
+                  <LoginModal open={loginOpen} setOpen={setLoginOpen} />
+                </>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 px-2">

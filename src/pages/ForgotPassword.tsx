@@ -6,11 +6,28 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const ForgotPassword = () => {
-  const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+  const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    toast.success("If an account exists, a reset link has been sent to your email.");
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    if (!email) {
+      toast.error("Please enter your email");
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      toast.error("Password reset unavailable: Supabase not configured.");
+      return;
+    }
+    const redirectTo = `${window.location.origin}/change-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) {
+      toast.error(error.message || "Failed to send reset link");
+    } else {
+      toast.success("If an account exists, a reset link has been sent to your email.");
+    }
   };
 
   return (
@@ -28,11 +45,11 @@ const ForgotPassword = () => {
                 <form onSubmit={onSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="your.email@pstu.ac.bd" required />
+                    <Input id="email" name="email" type="email" autoComplete="email" placeholder="your.email@pstu.ac.bd" required />
                   </div>
                   <Button type="submit" className="w-full bg-gradient-accent shadow-accent">Send reset link</Button>
                   <p className="text-sm text-center text-muted-foreground">
-                    Remembered? <Link to="/login" className="text-accent hover:underline">Back to login</Link>
+                    Remembered? <button type="button" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab: 'login' } })); }} className="text-accent hover:underline">Back to login</button>
                   </p>
                 </form>
               </CardContent>

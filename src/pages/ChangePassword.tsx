@@ -8,9 +8,10 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const schema = z.object({
-  current: z.string().min(1, "Enter your current password"),
+  current: z.string().optional(),
   password: z.string().min(6, "New password must be at least 6 characters"),
   confirm: z.string().min(6, "Confirm your new password"),
 }).refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords don't match" });
@@ -20,10 +21,17 @@ type FormValues = z.infer<typeof schema>;
 const ChangePassword = () => {
   const form = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const onSubmit = form.handleSubmit(async () => {
-    // Mock change password
-    await new Promise((r) => setTimeout(r, 500));
-    toast.success("Password changed successfully (mock)");
+  const onSubmit = form.handleSubmit(async (values) => {
+    if (!isSupabaseConfigured) {
+      toast.error("Supabase not configured");
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: values.password });
+    if (error) {
+      toast.error(error.message || "Failed to update password");
+      return;
+    }
+    toast.success("Password updated successfully");
     form.reset();
   });
 
@@ -41,17 +49,17 @@ const ChangePassword = () => {
                 <form onSubmit={onSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="current">Current Password</Label>
-                    <Input id="current" type="password" {...form.register("current")} />
+                    <Input id="current" type="password" autoComplete="current-password" placeholder="(optional)" {...form.register("current")} />
                     {form.formState.errors.current && <p className="text-xs text-red-500">{form.formState.errors.current.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">New Password</Label>
-                    <Input id="password" type="password" {...form.register("password")} />
+                    <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
                     {form.formState.errors.password && <p className="text-xs text-red-500">{form.formState.errors.password.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm">Confirm New Password</Label>
-                    <Input id="confirm" type="password" {...form.register("confirm")} />
+                    <Input id="confirm" type="password" autoComplete="new-password" {...form.register("confirm")} />
                     {form.formState.errors.confirm && <p className="text-xs text-red-500">{form.formState.errors.confirm.message}</p>}
                   </div>
                   <Button type="submit" className="w-full bg-gradient-accent">Update Password</Button>

@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/context/AuthContext";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import AboutPage from "./pages/About";
@@ -25,18 +26,19 @@ import Auction from "./pages/Auction";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Rules from "./pages/Rules";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+
+
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
+      
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<AboutPage />} />
@@ -57,24 +59,17 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/rules" element={<Rules />} />
 
-            {/* Protected: Player */}
-            <Route element={<ProtectedRoute allowRoles={["player", "admin"]} />}> 
-              {/* Both roles can view dashboard; admin will likely redirect to /admin elsewhere */}
-              <Route path="/dashboard" element={<PlayerDashboard />} />
-            </Route>
-
-            {/* Protected: Admin */}
-            <Route element={<ProtectedRoute allowRoles={["admin"]} />}> 
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/auction" element={<Auction />} />
-            </Route>
+            <Route path="/admin/*" element={<Admin />} />
+            <Route path="/dashboard" element={<PlayerDashboard />} />
+            <Route path="/auction" element={<Auction />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+      
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
