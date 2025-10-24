@@ -127,7 +127,7 @@ const TournamentDetails = () => {
           <Card id="about" className="border-border max-w-5xl mx-auto">
             <CardHeader>
               <CardTitle className="text-2xl">About this Tournament</CardTitle>
-              <CardDescription>{data.title} • Professional T20 cricket within the CSE community.</CardDescription>
+              <CardDescription>{data.title} • Professional T10 cricket within the CSE community.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               <p>{data.description}</p>
@@ -184,9 +184,9 @@ const TournamentDetails = () => {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <ul className="list-disc pl-5 space-y-2">
                 <li>Team count: 5 fixed departments.</li>
-                <li>Format: T20, 20 overs per side.</li>
+                <li>Format: T10, 10 overs per side.</li>
                 <li>Knockout and league structure may vary per season.</li>
-                <li>Playing conditions follow standard T20 rules.</li>
+                <li>Playing conditions follow standard T10 rules.</li>
               </ul>
             </CardContent>
           </Card>

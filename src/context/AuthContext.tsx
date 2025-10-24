@@ -102,19 +102,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // convert dataURL to Blob
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-  const ext = blob.type.split('/')[1] || 'png';
-  // Store objects under a user folder inside the bucket. The bucket name is
-  // provided separately to supabase.storage.from(bucket) so the object key
-  // should not repeat the bucket name. Use `<userId>/...` so storage policies
-  // that check the object name prefix (auth.uid()) work correctly.
-  const filename = `${userId}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from(bucket).upload(filename, blob as unknown as File, { upsert: true });
+      const ext = (blob.type && blob.type.split('/')[1]) || 'png';
+      // Store objects under a user folder inside the bucket. The bucket name is
+      // provided separately to supabase.storage.from(bucket) so the object key
+      // should not repeat the bucket name. Use `<userId>/...` so storage policies
+      // that check the object name prefix (auth.uid()) work correctly.
+      // Ensure the current client session user id matches the intended userId.
+      // Storage policies typically check auth.uid(), so the client must be
+      // authenticated as the same user when uploading.
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUserId = sessionData?.session?.user?.id || null;
+        if (!sessionUserId) throw new Error('Not authenticated');
+        if (sessionUserId !== userId) {
+          // Prefer to use the session user id for the object path to satisfy RLS
+          // policies and avoid mismatches.
+          userId = sessionUserId;
+        }
+      } catch (err) {
+        console.warn('No active session while uploading avatar', err);
+        throw new Error('Not authenticated');
+      }
+
+      const filename = `${userId}/${Date.now()}.${ext}`;
+      // Convert Blob to File so Supabase SDK receives a File with a name/contentType
+      const file = new File([blob], filename, { type: blob.type || 'image/png' });
+      const { error: upErr } = await supabase.storage.from(bucket).upload(filename, file, { upsert: true });
       if (upErr) {
         console.error('Avatar upload failed', upErr.message || upErr);
         return null;
       }
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filename);
-      return urlData?.publicUrl || null;
+      // Try to get a public URL first. If the bucket is private, return a signed URL.
+  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filename);
+      if (urlData?.publicUrl) return urlData.publicUrl;
+      // fallback: create a signed URL valid for 1 hour
+      try {
+        const { data: signed, error: signErr } = await supabase.storage.from(bucket).createSignedUrl(filename, 60 * 60);
+        if (signErr) {
+          console.warn('createSignedUrl failed', signErr.message || signErr);
+          return null;
+        }
+        return signed?.signedUrl || null;
+      } catch (err) {
+        console.warn('createSignedUrl unexpected error', err);
+        return null;
+      }
     } catch (err) {
       console.error('uploadAvatarForUser error', err);
       return null;
@@ -241,9 +273,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (patch.name !== undefined) updates.name = patch.name;
     if (patch.avatar !== undefined) {
       // if avatar is a data-url, upload it
-      if (typeof patch.avatar === 'string' && patch.avatar.startsWith('data:') && user) {
-        const uploaded = await uploadAvatarForUser((await getProfileIdByEmail(user.email)) || user.email, patch.avatar as string);
+      if (typeof patch.avatar === 'string' && patch.avatar.startsWith('data:')) {
+        // Require an active session user for uploads; storage policies use auth.uid()
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUserId = sessionData?.session?.user?.id || null;
+        if (!sessionUserId) return Promise.reject(new Error('Not authenticated'));
+        const uploaded = await uploadAvatarForUser(sessionUserId, patch.avatar as string);
         if (uploaded) updates.avatar_url = uploaded;
+        else return Promise.reject(new Error('Avatar upload failed'));
       } else {
         updates.avatar_url = patch.avatar;
       }

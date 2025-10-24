@@ -2,8 +2,27 @@ import { Button } from "./ui/button";
 import { ArrowRight, Calendar, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import bannerImage from "@/assets/hero-cricket.jpg";
+import { useEffect, useState } from "react";
+import { fetchUpcomingTournaments } from "@/lib/api";
 
 const Hero = () => {
+  const [seasonTitle, setSeasonTitle] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const list = await fetchUpcomingTournaments();
+      if (!mounted) return;
+      if (Array.isArray(list) && list.length > 0) {
+        const first = list[0];
+        setSeasonTitle(first.title || null);
+        setDateRange(first.date || null);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Banner */}
@@ -20,13 +39,13 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-accent/20 backdrop-blur-sm border border-accent/30">
             <Calendar className="h-4 w-4 text-accent" />
-            <span className="text-accent-foreground font-medium">December 1 - December 12, 2026</span>
+            <span className="text-accent-foreground font-medium">{dateRange ?? 'December 1 - December 12, 2026'}</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground leading-tight">
-            CSE Premier League
-            <span className="block text-accent mt-2">2026</span>
+            {seasonTitle ?? 'CSE Premier League'}
+            <span className="block text-accent mt-2">{seasonTitle ? seasonTitle.split(' ').slice(-1)[0] : '2026'}</span>
           </h1>
 
           {/* Subheading */}

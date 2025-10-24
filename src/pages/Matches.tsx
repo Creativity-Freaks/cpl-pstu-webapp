@@ -19,9 +19,13 @@ const teamColors: Record<string, string> = {
   Mathematics: "from-rose-500 to-pink-600",
 };
 
-const TeamBadge = ({ name }: { name: string }) => (
-  <span className={`h-8 w-8 rounded-full grid place-items-center text-[10px] font-bold text-white bg-gradient-to-br ${teamColors[name] || "from-zinc-600 to-zinc-800"}`}>
-    {name.slice(0,2)}
+// Local helper types for safely coercing optional scorecard rows
+type BatterRow = { name?: string; runs?: number; balls?: number };
+type BowlerRow = { name?: string; wickets?: number; runs?: number; overs?: string; eco?: number };
+
+const TeamBadge = ({ name }: { name?: string }) => (
+  <span className={`h-8 w-8 rounded-full grid place-items-center text-[10px] font-bold text-white bg-gradient-to-br ${teamColors[name ?? ''] || "from-zinc-600 to-zinc-800"}`}>
+    {(name ?? '').slice(0, 2)}
   </span>
 );
 
@@ -42,18 +46,24 @@ const Ticker = ({ items }: { items: { a: string; b: string; score?: string }[] }
 );
 
 const LiveScoreCard = ({ match, tournamentTitle, tournamentId }: { match: Match; tournamentTitle: string; tournamentId: string }) => {
-  const topBatter = (match.battingA || []).sort((a,b) => b.runs - a.runs)[0];
-  const topBowler = (match.bowlingB || []).sort((a,b) => b.wickets - a.wickets || a.eco - b.eco)[0];
+  const topBatter = (match.battingA ?? []).slice().sort((a, b) => (Number(b.runs ?? 0) - Number(a.runs ?? 0)))[0];
+  const topBowler = (match.bowlingB ?? []).slice().sort((a, b) => {
+    const wk = Number(b.wickets ?? 0) - Number(a.wickets ?? 0);
+    if (wk !== 0) return wk;
+    const ae = Number(a.eco ?? Infinity);
+    const be = Number(b.eco ?? Infinity);
+    return ae - be;
+  })[0];
   return (
   <Card className="border-border hover:shadow-glow transition-all animate-scale-in">
     <CardHeader>
       <CardTitle className="flex items-center justify-between text-lg md:text-xl">
         <span className="flex items-center gap-2">
-          <TeamBadge name={match.teamA.name} />
-          <span className="font-semibold">{match.teamA.name}</span>
+          <TeamBadge name={match.teamA?.name ?? ''} />
+          <span className="font-semibold">{match.teamA?.name ?? ''}</span>
           <span className="text-muted-foreground">vs</span>
-          <span className="font-semibold">{match.teamB.name}</span>
-          <TeamBadge name={match.teamB.name} />
+          <span className="font-semibold">{match.teamB?.name ?? ''}</span>
+          <TeamBadge name={match.teamB?.name ?? ''} />
         </span>
         <span className="text-xs px-2 py-1 rounded bg-red-500 text-white animate-pulse">LIVE</span>
       </CardTitle>
@@ -62,20 +72,33 @@ const LiveScoreCard = ({ match, tournamentTitle, tournamentId }: { match: Match;
     <CardContent className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="p-4 rounded-lg border border-border">
-          <p className="text-sm text-muted-foreground">{match.teamA.name}</p>
-          <p className="text-3xl font-bold">{match.teamA.score || "--/--"} <span className="text-base font-normal">({match.teamA.overs || "--"})</span></p>
+          <p className="text-sm text-muted-foreground">{match.teamA?.name ?? ''}</p>
+          <p className="text-3xl font-bold">{match.teamA?.score || "--/--"} <span className="text-base font-normal">({match.teamA?.overs || "--"})</span></p>
         </div>
         <div className="p-4 rounded-lg border border-border">
-          <p className="text-sm text-muted-foreground">{match.teamB.name}</p>
-          <p className="text-3xl font-bold">{match.teamB.score || "--/--"} <span className="text-base font-normal">({match.teamB.overs || "--"})</span></p>
+          <p className="text-sm text-muted-foreground">{match.teamB?.name ?? ''}</p>
+          <p className="text-3xl font-bold">{match.teamB?.score || "--/--"} <span className="text-base font-normal">({match.teamB?.overs || "--"})</span></p>
         </div>
       </div>
       {match.toss && <p className="text-sm text-muted-foreground">{match.toss}</p>}
       {match.note && <p className="text-sm">{match.note}</p>}
       {(topBatter || topBowler) && (
         <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
-          {topBatter && <span>Top batter: <span className="font-medium text-foreground">{topBatter.name}</span> {topBatter.runs} ({topBatter.balls})</span>}
-          {topBowler && <span>Best bowler: <span className="font-medium text-foreground">{topBowler.name}</span> {topBowler.wickets}/{topBowler.runs} • {topBowler.overs} (Eco {topBowler.eco.toFixed(1)})</span>}
+          {topBatter && (
+            <span>
+              Top batter: <span className="font-medium text-foreground">{topBatter?.name ?? ''}</span>
+              {typeof topBatter?.runs === 'number' ? ` ${topBatter!.runs}` : ''}
+              {topBatter?.balls ? ` (${topBatter!.balls})` : ''}
+            </span>
+          )}
+          {topBowler && (
+            <span>
+              Best bowler: <span className="font-medium text-foreground">{topBowler?.name ?? ''}</span>
+              {typeof topBowler?.wickets === 'number' ? ` ${topBowler!.wickets}` : ''}/{typeof topBowler?.runs === 'number' ? `${topBowler!.runs}` : '--'}
+              {topBowler?.overs ? ` • ${topBowler!.overs}` : ''}
+              {typeof topBowler?.eco === 'number' ? ` (Eco ${topBowler!.eco.toFixed(1)})` : ''}
+            </span>
+          )}
         </div>
       )}
       <div className="pt-2">
@@ -90,7 +113,7 @@ const UpcomingMatchCard = ({ match, tournamentTitle, tournamentId }: { match: Ma
   <Card className="border-border">
     <CardHeader>
       <div className="flex items-center justify-between">
-        <CardTitle className="text-lg md:text-xl">{match.teamA.name} vs {match.teamB.name}</CardTitle>
+        <CardTitle className="text-lg md:text-xl">{match.teamA?.name ?? ''} vs {match.teamB?.name ?? ''}</CardTitle>
         <Link to={`/match/${tournamentId}/${match.id}`} className="text-xs text-accent hover:underline">Details</Link>
       </div>
       <CardDescription>{tournamentTitle} • {match.venue} • {new Date(match.startTime).toLocaleString()}</CardDescription>
@@ -99,13 +122,19 @@ const UpcomingMatchCard = ({ match, tournamentTitle, tournamentId }: { match: Ma
 );
 
 const CompletedMatchCard = ({ match, tournamentTitle, tournamentId }: { match: Match; tournamentTitle: string; tournamentId: string }) => {
-  const topBatter = [...(match.battingA || []), ...(match.battingB || [])].sort((a,b) => b.runs - a.runs)[0];
-  const topBowler = [...(match.bowlingA || []), ...(match.bowlingB || [])].sort((a,b) => b.wickets - a.wickets || a.eco - b.eco)[0];
+  const topBatter = ([...(match.battingA ?? []), ...(match.battingB ?? [])] as BatterRow[]).slice().sort((a, b) => (Number(b.runs ?? 0) - Number(a.runs ?? 0)))[0];
+  const topBowler = ([...(match.bowlingA ?? []), ...(match.bowlingB ?? [])] as BowlerRow[]).slice().sort((a, b) => {
+    const wk = Number(b.wickets ?? 0) - Number(a.wickets ?? 0);
+    if (wk !== 0) return wk;
+    const ae = Number(a.eco ?? Infinity);
+    const be = Number(b.eco ?? Infinity);
+    return ae - be;
+  })[0];
   return (
     <Card className="border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg md:text-xl">{match.teamA.name} vs {match.teamB.name}</CardTitle>
+          <CardTitle className="text-lg md:text-xl">{match.teamA?.name ?? ''} vs {match.teamB?.name ?? ''}</CardTitle>
           <Link to={`/match/${tournamentId}/${match.id}`} className="text-xs text-accent hover:underline">Scorecard</Link>
         </div>
         <CardDescription>{tournamentTitle} • {match.venue} • {new Date(match.startTime).toLocaleString()}</CardDescription>
@@ -124,8 +153,21 @@ const CompletedMatchCard = ({ match, tournamentTitle, tournamentId }: { match: M
         {match.result && <p className="text-sm font-medium">Result: {match.result}</p>}
         {(topBatter || topBowler) && (
           <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
-            {topBatter && <span>Top batter: <span className="font-medium text-foreground">{topBatter.name}</span> {topBatter.runs} ({topBatter.balls})</span>}
-            {topBowler && <span>Best bowler: <span className="font-medium text-foreground">{topBowler.name}</span> {topBowler.wickets}/{topBowler.runs} • {topBowler.overs} (Eco {topBowler.eco.toFixed(1)})</span>}
+            {topBatter && (
+              <span>
+                Top batter: <span className="font-medium text-foreground">{topBatter?.name ?? ''}</span>
+                {typeof topBatter?.runs === 'number' ? ` ${topBatter!.runs}` : ''}
+                {topBatter?.balls ? ` (${topBatter!.balls})` : ''}
+              </span>
+            )}
+            {topBowler && (
+              <span>
+                Best bowler: <span className="font-medium text-foreground">{topBowler?.name ?? ''}</span>
+                {typeof topBowler?.wickets === 'number' ? ` ${topBowler!.wickets}` : ''}/{typeof topBowler?.runs === 'number' ? `${topBowler!.runs}` : '--'}
+                {topBowler?.overs ? ` • ${topBowler!.overs}` : ''}
+                {typeof topBowler?.eco === 'number' ? ` (Eco ${topBowler!.eco.toFixed(1)})` : ''}
+              </span>
+            )}
           </div>
         )}
       </CardContent>
@@ -147,8 +189,8 @@ const Matches = () => {
     if (!query.trim()) return allRaw;
     const q = query.toLowerCase();
     return allRaw.filter(({ match }) =>
-      (teamFilter === "All" || match.teamA.name === teamFilter || match.teamB.name === teamFilter) &&
-      (match.teamA.name.toLowerCase().includes(q) || match.teamB.name.toLowerCase().includes(q))
+      (teamFilter === "All" || match.teamA?.name === teamFilter || match.teamB?.name === teamFilter) &&
+      ((match.teamA?.name || '').toLowerCase().includes(q) || (match.teamB?.name || '').toLowerCase().includes(q))
     );
   }, [allRaw, query, teamFilter]);
   const live = all.filter((x) => x.match.status === "live");
@@ -167,9 +209,9 @@ const Matches = () => {
           {/* Live ticker */}
           <Ticker
             items={(live.length ? live : upcoming).slice(0, 6).map(({ match }) => ({
-              a: match.teamA.name,
-              b: match.teamB.name,
-              score: match.teamA.score && match.teamB.score ? `${match.teamA.score} vs ${match.teamB.score}` : undefined,
+              a: match.teamA?.name ?? '',
+              b: match.teamB?.name ?? '',
+              score: match.teamA?.score && match.teamB?.score ? `${match.teamA.score} vs ${match.teamB.score}` : undefined,
             }))}
           />
 

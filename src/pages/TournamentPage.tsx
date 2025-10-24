@@ -4,13 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { tournaments, Tournament } from "@/data/tournaments";
+import { Tournament } from "@/data/tournaments";
 import { useEffect, useState } from "react";
+import { fetchAllTournaments } from "@/lib/api";
 
 
 const TournamentPage = () => {
-  // Using static tournaments data for now
-  const source = tournaments;
+  const [source, setSource] = useState<Tournament[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const list = await fetchAllTournaments();
+      if (!mounted) return;
+      setSource(list);
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   const currentTournaments = source.filter((t) => t.status === "Live");
   const upcomingTournaments = source.filter((t) => t.status === "Upcoming");
   const pastTournaments = source.filter((t) => t.status === "Completed");

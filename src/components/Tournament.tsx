@@ -3,28 +3,22 @@ import { Button } from "./ui/button";
 import { Calendar, Clock, MapPin, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import trophyImage from "@/assets/trophy.jpg";
+import { useEffect, useState } from "react";
+import { fetchUpcomingTournaments } from "@/lib/api";
+import type { UITournament } from "@/lib/api";
 
 const Tournament = () => {
-  const tournaments = [
-    {
-      title: "CPL 2026 - Main Tournament",
-      description: "The flagship championship featuring all departmental teams",
-      date: "March 15 - April 30, 2026",
-      teams: "20 Teams",
-      venue: "PSTU Cricket Ground",
-      status: "Upcoming",
-      statusColor: "bg-accent",
-    },
-    {
-      title: "Qualifier Round",
-      description: "Initial qualifying matches to determine main tournament entries",
-      date: "March 1 - March 10, 2026",
-      teams: "32 Teams",
-      venue: "PSTU Cricket Ground",
-      status: "Registration Open",
-      statusColor: "bg-primary-glow",
-    },
-  ];
+  const [upcoming, setUpcoming] = useState<UITournament[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const list = await fetchUpcomingTournaments();
+      if (!mounted) return;
+      setUpcoming(list.slice(0, 2));
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <section className="py-20 bg-background">
@@ -39,9 +33,9 @@ const Tournament = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          {tournaments.map((tournament, index) => (
+          {upcoming.map((tournament, index) => (
             <Card 
-              key={index} 
+              key={tournament.id || index} 
               className="border-border hover:shadow-glow transition-all duration-300 hover:-translate-y-1 animate-scale-in overflow-hidden"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
@@ -49,8 +43,8 @@ const Tournament = () => {
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
                   <CardTitle className="text-2xl">{tournament.title}</CardTitle>
-                  <span className={`${tournament.statusColor} text-white px-3 py-1 rounded-full text-xs font-medium`}>
-                    {tournament.status}
+                  <span className={`${tournament.statusColor || 'bg-accent'} text-white px-3 py-1 rounded-full text-xs font-medium`}>
+                    {tournament.status || 'Upcoming'}
                   </span>
                 </div>
                 <CardDescription className="text-base">{tournament.description}</CardDescription>
@@ -63,11 +57,11 @@ const Tournament = () => {
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4 text-accent" />
-                    <span>{tournament.teams}</span>
+                    <span>{tournament.teams ? `${tournament.teams} Teams` : '—'}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground col-span-full">
                     <MapPin className="h-4 w-4 text-accent" />
-                    <span>{tournament.venue}</span>
+                    <span>{tournament.venue || 'PSTU Cricket Ground'}</span>
                   </div>
                 </div>
                 <Link to="/tournament">

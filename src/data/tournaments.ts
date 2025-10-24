@@ -42,7 +42,7 @@ export type Tournament = {
 export const tournaments: Tournament[] = [
   {
     id: "cpl-2026",
-    title: "CPL 2026 - League Stage",
+    title: "CSE Premier League 2026",
     description: "The main championship is currently underway",
     date: "December 1 - December 12, 2026",
     teams: 5,
@@ -156,7 +156,7 @@ export const tournaments: Tournament[] = [
   },
   {
     id: "cpl-2027",
-    title: "CPL 2027 - Main Tournament",
+    title: "CSE Premier League 2027",
     description: "Next season's flagship championship",
     date: "December 2027",
     teams: 5,
@@ -175,7 +175,7 @@ export const tournaments: Tournament[] = [
     const idx = (2025 - year) % champs.length;
     return {
       id,
-      title: `CPL ${year}`,
+      title: `CSE Premier League ${year}`,
       description: `Season ${year} championship of CSE Premier League`,
       date: `December ${year}`,
       teams: 5,

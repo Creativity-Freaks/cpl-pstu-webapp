@@ -10,6 +10,7 @@ import Gallery from "./pages/Gallery";
 import TournamentPage from "./pages/TournamentPage";
 import TournamentDetails from "./pages/TournamentDetails";
 import Matches from "./pages/Matches";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import MatchCenter from "./pages/MatchCenter";
 import Team from "./pages/Team";
 import TeamDepartment from "./pages/TeamDepartment";
@@ -39,6 +40,7 @@ const App = () => (
       <Sonner />
       
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<AboutPage />} />
@@ -66,6 +68,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
         </BrowserRouter>
       
     </TooltipProvider>

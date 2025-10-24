@@ -1,8 +1,22 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { currentLeaderboards } from "@/data/leaderboards";
+import { useEffect, useState } from "react";
+import { fetchLeaderboards } from "@/lib/api";
+import type { SeasonLeaderboards } from "@/data/leaderboards";
 
 export default function LeaderboardsWidget({ stacked = false }: { stacked?: boolean }) {
-  const { batting, bowling } = currentLeaderboards;
+  const [data, setData] = useState<SeasonLeaderboards | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const lb = await fetchLeaderboards();
+      if (!mounted) return;
+      setData(lb as SeasonLeaderboards);
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const { batting, bowling } = data || { batting: [], bowling: [] };
 
   const Row = ({ idx, left, right }: { idx: number; left: React.ReactNode; right: React.ReactNode }) => (
     <div className="grid grid-cols-12 items-center py-2 border-b border-border last:border-0">

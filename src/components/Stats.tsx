@@ -1,15 +1,31 @@
 import { useEffect, useRef, useState } from "react";
+import { fetchHomeStats } from "@/lib/api";
 
 const Stats = () => {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  const stats = [
-    { value: 500, suffix: "+", label: "Registered Players", duration: 2000 },
-    { value: 20, suffix: "+", label: "Competing Teams", duration: 1500 },
-    { value: 50, suffix: "+", label: "Total Matches", duration: 2000 },
-    { value: 100, suffix: "K+", label: "Prize Pool (BDT)", duration: 2500 },
-  ];
+  const [stats, setStats] = useState<{ value: number; suffix: string; label: string; duration: number }[]>([
+    { value: 0, suffix: "+", label: "Registered Players", duration: 2000 },
+    { value: 5, suffix: "+", label: "Competing Teams", duration: 1500 },
+    { value: 0, suffix: "+", label: "Total Matches", duration: 2000 },
+     { value: 50, suffix: "k BDT", label: "Prize Pool (BDT)", duration: 2500 },
+  ]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const s = await fetchHomeStats();
+      if (!mounted) return;
+      setStats([
+        { value: s.players || 0, suffix: "+", label: "Registered Players", duration: 2000 },
+        { value: s.teams || 0, suffix: "+", label: "Competing Teams", duration: 1500 },
+        { value: s.matches || 0, suffix: "+", label: "Total Matches", duration: 2000 },
+         { value: Math.round((s.prizePool || 0) / 1000), suffix: "k BDT", label: "Prize Pool (BDT)", duration: 2500 },
+      ]);
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

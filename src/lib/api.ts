@@ -1,6 +1,7 @@
 import { tournaments, Tournament, Match } from "@/data/tournaments";
 import { departmentList, DepartmentTeam } from "@/data/teams";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { currentLeaderboards, SeasonLeaderboards } from "@/data/leaderboards";
 
 export type UIMatchItem = { match: Match; tournamentTitle: string; tournamentId: string };
 export type UITeamOverview = { id: string; name: string; short: string; players: number };
@@ -61,12 +62,19 @@ export const fetchMatchById = async (tournamentId: string, matchId: string): Pro
 
 export const fetchTeamsOverview = async (): Promise<UITeamOverview[]> => {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from('teams').select('id, name, short_name, (select count(*) from team_members where team_members.team_id = teams.id) as players_count');
-    if (error) return [];
-    return (data || []).map((r: unknown) => {
-      const rec = r as SupabaseTeamRow & { players_count?: number };
-      return { id: rec.id, name: rec.name, short: rec.short_name || '', players: Number(rec.players_count) || 0 };
-    });
+    try {
+      // Try to fetch teams with nested team_members if available
+      const { data, error } = await supabase.from('teams').select('id, name, short_name, team_members(id)');
+      if (!error && Array.isArray(data)) {
+        return data.map((r: unknown) => {
+          const rec = r as Record<string, unknown>;
+          const teamMembers = Array.isArray(rec['team_members']) ? (rec['team_members'] as unknown[]) : [];
+          return { id: String(rec['id']), name: String(rec['name']), short: String(rec['short_name'] || ''), players: teamMembers.length };
+        });
+      }
+    } catch (e) {
+      // fall through to local
+    }
   }
   return departmentList.map((d) => ({ id: d.key, name: d.name, short: d.short, players: d.players.length }));
 };
@@ -102,5 +110,114 @@ export const fetchTournamentById = async (id: string): Promise<UITournament | nu
 
 // Note: These are simple local implementations. When Supabase is configured, you can extend
 // these functions to query Supabase tables instead. For now, returning local static data keeps pages working.
+
+// New helpers for homepage dynamics
+export type HomeStats = { players: number; teams: number; matches: number; prizePool: number };
+
+export const fetchHomeStats = async (): Promise<HomeStats> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // Count teams, registered player profiles and matches
+      const teamsResp = await supabase.from('teams').select('id', { count: 'exact', head: true });
+      // Prefer counting profiles table for registered players
+      const profilesResp = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'player');
+      const matchesResp = await supabase.from('matches').select('id', { count: 'exact', head: true });
+
+      const teamsCount = Number(teamsResp.count || 0);
+      const playersCount = Number(profilesResp.count || 0);
+      const matchesCount = Number(matchesResp.count || 0);
+
+      // Per product requirement: prize pool shown on homepage stays static at 50,000 BDT.
+      const STATIC_PRIZE_POOL = 50000;
+      return {
+        teams: teamsCount,
+        players: playersCount,
+        matches: matchesCount,
+        prizePool: STATIC_PRIZE_POOL,
+      };
+    } catch (e) {
+      // fall through to local
+    }
+  }
+  // Local fallback using static data
+  const teams = 5; // default to 5 teams as requested
+  const players = departmentList.reduce((s, d) => s + (d.players?.length || 0), 0);
+  const matches = tournaments.flatMap((t) => t.matches).length;
+  const prizePool = 50000; // default prize pool set to 50,000 as requested
+  return { teams, players, matches, prizePool };
+};
+
+export const fetchUpcomingTournaments = async (): Promise<UITournament[]> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('tournaments').select('*').order('date', { ascending: true });
+      if (!error && Array.isArray(data)) return data as UITournament[];
+    } catch (e) {
+      // fallthrough to local
+    }
+    // fallthrough to local
+  }
+  // Local: return upcoming or live tournaments first
+  return tournaments.filter((t) => t.status === 'Live' || t.status === 'Upcoming');
+};
+
+export const fetchAllTournaments = async (): Promise<UITournament[]> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('tournaments').select('*').order('date', { ascending: true });
+      if (!error && Array.isArray(data)) return data as UITournament[];
+    } catch (e) {
+      // fallthrough to local
+    }
+  }
+  return tournaments;
+};
+
+export const fetchLeaderboards = async (): Promise<SeasonLeaderboards> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // Attempt to read a player_stats table with common columns. If your schema
+      // differs, adjust column names accordingly. We'll build batting and bowling
+      // lists from the same table and pick the top performers.
+      const { data: battingData, error: bErr } = await supabase.from('player_stats').select('*').order('runs', { ascending: false }).limit(5);
+      const { data: bowlingData, error: bwErr } = await supabase.from('player_stats').select('*').order('wickets', { ascending: false }).limit(5);
+      if ((bErr && !Array.isArray(battingData)) || (bwErr && !Array.isArray(bowlingData))) {
+        throw new Error('leaderboards table missing or unexpected shape');
+      }
+
+      const batting = (Array.isArray(battingData) ? battingData : []).map((r: unknown) => {
+        const rec = r as Record<string, unknown>;
+        return {
+          name: String(rec['player_name'] || rec['name'] || 'Player'),
+          team: (String(rec['team'] || rec['team_code'] || 'CSIT') as 'CSIT' | 'CCE' | 'PME' | 'EEE' | 'Mathematics'),
+          runs: Number(rec['runs'] as unknown) || 0,
+          innings: Number(rec['innings'] as unknown) || 0,
+          average: Number(rec['average'] as unknown) || 0,
+          strikeRate: Number(rec['strike_rate'] as unknown) || Number(rec['strikeRate'] as unknown) || 0,
+        };
+      });
+
+      const bowling = (Array.isArray(bowlingData) ? bowlingData : []).map((r: unknown) => {
+        const rec = r as Record<string, unknown>;
+        return {
+          name: String(rec['player_name'] || rec['name'] || 'Player'),
+          team: (String(rec['team'] || rec['team_code'] || 'CSIT') as 'CSIT' | 'CCE' | 'PME' | 'EEE' | 'Mathematics'),
+          wickets: Number(rec['wickets'] as unknown) || 0,
+          innings: Number(rec['innings'] as unknown) || 0,
+          economy: Number(rec['economy'] as unknown) || 0,
+          average: Number(rec['average'] as unknown) || 0,
+        };
+      });
+
+      const seasonId = 'current';
+      const seasonTitle = 'Current Season';
+      return { seasonId, seasonTitle, batting, bowling } as SeasonLeaderboards;
+    } catch (e) {
+      // fallthrough to local
+    }
+  }
+  // fallback to local static leaderboards
+  return currentLeaderboards;
+};
 
 export default {};
