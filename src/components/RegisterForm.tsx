@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/context/useAuth";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
@@ -67,6 +68,19 @@ const RegisterForm: React.FC<Props> = ({ compact = false, onSuccess }) => {
         transactionId: values.transactionId,
   session: values.session,
       });
+      // After register, Supabase may require email confirmation and not
+      // provide an active session. If there's no session, inform the user
+      // to confirm their email instead of assuming they're logged in.
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) {
+          toast.success('Account created — please check your email to confirm before logging in.');
+          onSuccess?.();
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not verify session after register', err);
+      }
       toast.success("Registered successfully");
       onSuccess?.();
     } catch (err: unknown) {

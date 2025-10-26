@@ -175,57 +175,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const udata = data.user;
     if (!udata) return Promise.reject(new Error('No user returned'));
 
-    // Preferred flow: call a server-side endpoint that uses the Supabase service_role key
-    // to create the profile and (optionally) upload the avatar. This avoids row-level
-    // security (RLS) issues when inserting from the browser. If the endpoint is not
-    // available or fails, fall back to client-side upsert (may fail if RLS is enabled).
-    const profilePayload: Record<string, unknown> = {
-      id: udata.id,
-      name,
-      email,
-      role,
-      session: session || null,
-    };
-    if (playerType) profilePayload.player_type = playerType;
-    if (semester) profilePayload.semester = semester;
-    if (paymentMethod) profilePayload.payment_method = paymentMethod;
-    if (paymentNumber) profilePayload.payment_number = paymentNumber;
-    if (transactionId) profilePayload.transaction_id = transactionId;
-    // If an avatar data-url is provided, include it in the payload so the server can
-    // upload it using the service role key. This avoids client storage upload RLS issues.
-    if (avatar) profilePayload.avatar = avatar;
-
-    // Try server endpoint first. Default path is '/api/create-profile' but can be
-    // overridden with VITE_PROFILE_API environment variable.
-    const profileApi = (import.meta.env.VITE_PROFILE_API as string) || '/api/create-profile';
+    // Direct client-side flow: ensure session (try to sign in), upload avatar
+    // using the authenticated client, then upsert the profile row directly.
+    // This keeps the code simple and uses Supabase from the browser.
     try {
-      const resp = await fetch(profileApi, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profilePayload),
-      });
-      if (resp.ok) {
-        const json = await resp.json().catch(() => null) as unknown;
-        let upsertedProfile: ProfileRow | null = null;
-        if (json && typeof json === 'object') {
-          const asObj = json as Record<string, unknown>;
-          if ('profile' in asObj && asObj.profile && typeof asObj.profile === 'object') upsertedProfile = asObj.profile as ProfileRow;
-          else upsertedProfile = asObj as ProfileRow;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionUserId = sessionData?.session?.user?.id || null;
+      if (!sessionUserId) {
+        // attempt to sign in immediately with the provided credentials so the
+        // client can upload to storage (policies often check auth.uid())
+        try {
+          const signin = await supabase.auth.signInWithPassword({ email, password });
+          if (signin.error) console.warn('Auto sign-in after signUp failed', signin.error.message || signin.error);
+        } catch (err) {
+          console.warn('Auto sign-in after signUp unexpected error', err);
         }
-        if (!upsertedProfile) throw new Error('Empty profile returned from server');
-        const u = mapProfile(upsertedProfile as ProfileRow);
-        persistCurrent(u);
-        return u;
       }
-      // if server returned a non-OK status, try fallback below
-      const errBody = await resp.json().catch(() => null);
-      console.warn('Profile API returned error, falling back to client upsert', errBody || resp.statusText);
     } catch (err) {
-      // network error or fetch not available - fall back to client upsert
-      console.warn('Profile API unavailable, falling back to client upsert', err);
+      console.warn('Failed to ensure session after signUp', err);
     }
 
-    // Fallback: client-side avatar upload + upsert (may fail under RLS)
+    // Now attempt client-side avatar upload and profile upsert.
     let avatarUrl: string | null = null;
     if (avatar && avatar.startsWith('data:')) {
       avatarUrl = await uploadAvatarForUser(udata.id, avatar);
@@ -234,7 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatarUrl = avatar;
     }
 
-    // create a profile row for this user (client-side upsert)
     const profile: Record<string, unknown> = {
       id: udata.id,
       name,

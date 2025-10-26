@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/useAuth";
+import { supabase } from "@/lib/supabase";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
@@ -81,18 +82,49 @@ const Auth: React.FC<AuthProps> = ({ initialTab, compact = false, onSuccess }) =
       onSuccess?.();
       navigate(u.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
-      toast.error("Login failed");
+      console.error('Login failed', err);
+      let msg = 'Login failed';
+      if (err instanceof Error) msg = err.message;
+      else if (err && typeof err === 'object') {
+        const o = err as Record<string, unknown>;
+        if (typeof o.message === 'string') msg = o.message;
+        else if (o['error']) msg = String(o['error']);
+        else msg = JSON.stringify(o);
+      }
+      toast.error(msg);
     }
   });
 
   const handleRegister = registerForm.handleSubmit(async (values) => {
     try {
       await register({ name: values.name, email: values.email, password: values.password, avatar: values.avatar });
+      // After register, the Supabase signUp flow may require email confirmation
+      // (no active session returned). Check if there is an active session; if
+      // not, inform the user to confirm their email instead of navigating.
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) {
+          toast.success('Account created — please check your email to confirm before logging in.');
+          onSuccess?.();
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not verify session after register', err);
+      }
       toast.success("Registration successful");
       onSuccess?.();
       navigate("/dashboard");
     } catch (err) {
-      toast.error("Registration failed");
+      console.error('Registration failed', err);
+      let msg = 'Registration failed';
+      if (err instanceof Error) msg = err.message;
+      else if (err && typeof err === 'object') {
+        const o = err as Record<string, unknown>;
+        if (typeof o.message === 'string') msg = o.message;
+        else if (o['error']) msg = String(o['error']);
+        else msg = JSON.stringify(o);
+      }
+      toast.error(msg);
     }
   });
 
