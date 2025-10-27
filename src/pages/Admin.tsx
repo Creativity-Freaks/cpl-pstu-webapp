@@ -166,6 +166,18 @@ const AdminPage = () => {
                 <Button variant="destructive" onClick={logout} className="flex items-center gap-2"><LogOut className="h-4 w-4"/> Logout</Button>
               </CardContent>
             </Card>
+
+            <Card className="border-border hover:shadow-glow transition-all animate-fade-in-up">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-accent" /> Testimonials</CardTitle>
+                <CardDescription>Manage player testimonials</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/admin/testimonials">
+                  <Button className="bg-gradient-accent">Manage Testimonials</Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

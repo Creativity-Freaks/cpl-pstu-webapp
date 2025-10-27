@@ -27,6 +27,8 @@ import Auction from "./pages/Auction";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Rules from "./pages/Rules";
+import TestimonialForm from "./components/TestimonialForm";
+import AdminTestimonials from "./pages/AdminTestimonials";
 
 
 
@@ -60,6 +62,8 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/rules" element={<Rules />} />
+            <Route path="/submit-testimonial" element={<TestimonialForm />} />
+            <Route path="/admin/testimonials" element={<AdminTestimonials />} />
 
             <Route path="/admin/*" element={<Admin />} />
             <Route path="/dashboard" element={<PlayerDashboard />} />

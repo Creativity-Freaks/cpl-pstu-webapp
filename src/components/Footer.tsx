@@ -16,10 +16,10 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Twitter, href: "#", label: "Twitter" },
-    { icon: Youtube, href: "#", label: "YouTube" },
+    { icon: Facebook, href: "https://www.facebook.com/cpl", label: "Facebook" },
+    { icon: Instagram, href: "https://www.instagram.com/cpl2026", label: "Instagram" },
+    { icon: Twitter, href: "https://www.twitter.com/cpl2026", label: "Twitter" },
+    { icon: Youtube, href: "https://www.youtube.com/@DevPreneur", label: "YouTube" },
   ];
 
   return (
@@ -79,7 +79,9 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-lg mb-4">Resources</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link to="/about" className="hover:text-accent transition-colors">About Us</Link></li>
+              <li>
+                <Link to="/faq" className="hover:text-accent transition-colors">FAQ</Link>
+              </li>
               <li>
                 <a
                   href="#"
@@ -101,6 +103,9 @@ const Footer = () => {
               <li><Link to="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-accent transition-colors">Terms of Service</Link></li>
               <li><Link to="/rules" className="hover:text-accent transition-colors">Rules & Regulations</Link></li>
+              <li>
+                <Link to="/submit-testimonial" className="hover:text-accent transition-colors">Submit Testimonial</Link>
+              </li>
             </ul>
           </div>
 
@@ -114,7 +119,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="h-5 w-5 text-accent flex-shrink-0" />
-                <span>+880 1XXX-XXXXXX</span>
+                <span>+880 164-2948324</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="h-5 w-5 text-accent flex-shrink-0" />

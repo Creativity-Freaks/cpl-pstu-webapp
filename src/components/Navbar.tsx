@@ -34,6 +34,12 @@ const Navbar = () => {
     { name: "Contact", path: "/contact" },
   ];
 
+  const profileLinks = [
+    { name: "Dashboard", path: "/dashboard" },
+    { name: "Settings", path: "/settings" },
+    { name: "Submit Testimonial", path: "/submit-testimonial" },
+  ];
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -41,7 +47,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
+          <Link to="/#" className="flex items-center space-x-2 group">
             <img
               src={logoUrl}
               alt="CPL 2026 Logo"
@@ -101,15 +107,14 @@ const Navbar = () => {
                       <ShieldCheck className="h-4 w-4" /> Admin Panel
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")} className="flex items-center gap-2">
-                    <User className="h-4 w-4" /> Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")} className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" /> Profile Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/change-password")} className="flex items-center gap-2">
-                    <KeyRound className="h-4 w-4" /> Change Password
-                  </DropdownMenuItem>
+                  {profileLinks.map((link) => (
+                    <DropdownMenuItem key={link.path} onClick={() => navigate(link.path)} className="flex items-center gap-2">
+                      {link.name === "Dashboard" && <User className="h-4 w-4" />}
+                      {link.name === "Settings" && <Settings className="h-4 w-4" />}
+                      {link.name === "Submit Testimonial" && <KeyRound className="h-4 w-4" />}
+                      {link.name}
+                    </DropdownMenuItem>
+                  ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600">
                     <LogOut className="h-4 w-4" /> Logout
@@ -171,15 +176,11 @@ const Navbar = () => {
                         Admin
                       </Button>
                     )}
-                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/dashboard'); }}>
-                      Profile
-                    </Button>
-                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/settings'); }}>
-                      Settings
-                    </Button>
-                    <Button variant="secondary" onClick={() => { setIsOpen(false); navigate('/change-password'); }}>
-                      Change Pass
-                    </Button>
+                    {profileLinks.map((link) => (
+                      <Button key={link.path} variant="secondary" onClick={() => { setIsOpen(false); navigate(link.path); }}>
+                        {link.name}
+                      </Button>
+                    ))}
                     <Button variant="outline" onClick={() => { logout(); setIsOpen(false); }} className="col-span-2">
                       <LogOut className="h-4 w-4 mr-2" /> Logout
                     </Button>

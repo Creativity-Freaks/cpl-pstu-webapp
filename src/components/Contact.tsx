@@ -6,6 +6,7 @@ import { Card, CardContent } from "./ui/card";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { submitContactMessage } from "@/lib/api";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -14,10 +15,26 @@ const Contact = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent! We'll get back to you soon.");
-    setFormData({ name: "", email: "", message: "" });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { name, email, message } = formData;
+      const res = await submitContactMessage({ name, email, message });
+      if (res.success) {
+        toast.success("Message sent! We'll get back to you soon.");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        toast.error(res.error || 'Failed to send message');
+      }
+    } catch (err) {
+      toast.error('Unexpected error. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -29,7 +46,7 @@ const Contact = () => {
     {
       icon: Phone,
       title: "Phone",
-      info: "+880 1XXX-XXXXXX",
+      info: "+880 164-2948324",
     },
     {
       icon: Mail,
@@ -107,8 +124,8 @@ const Contact = () => {
                     className="border-border"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-gradient-accent shadow-accent">
-                  Send Message
+                <Button type="submit" disabled={isSubmitting} className="w-full bg-gradient-accent shadow-accent">
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                   <Send className="ml-2 h-4 w-4" />
                 </Button>
               </form>

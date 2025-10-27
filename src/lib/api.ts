@@ -221,3 +221,91 @@ export const fetchLeaderboards = async (): Promise<SeasonLeaderboards> => {
 };
 
 export default {};
+
+// Testimonials (read-only helper for homepage)
+export type Testimonial = {
+  id?: number;
+  name: string;
+  role?: string | null;
+  message: string;
+  avatar_url?: string | null;
+  approved?: boolean;
+  created_at?: string;
+};
+
+export const fetchTestimonials = async (): Promise<Testimonial[]> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('id, name, role, message, avatar_url, approved, created_at')
+        .eq('approved', true)
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data)) return data as Testimonial[];
+    } catch (e) {
+      // fallthrough to local
+    }
+  }
+  // fallback static testimonials
+  return [
+    {
+      name: 'Rakib Hasan',
+      role: 'Captain, Champions 2025',
+      message:
+        'CPL gave us the platform to showcase our talent and build lifelong friendships. The competition was fierce but the memories are priceless!',
+      avatar_url: null,
+      approved: true,
+    },
+    {
+      name: 'Sadia Akter',
+      role: 'Player of the Tournament 2025',
+      message:
+        "The organization and excitement of CPL is unmatched. Every match felt like a professional tournament. Can't wait for 2026!",
+      avatar_url: null,
+      approved: true,
+    },
+    {
+      name: 'Fahim Ahmed',
+      role: 'All-rounder, Runners-up 2025',
+      message:
+        "CPL is more than just cricket - it's about team spirit, competition, and representing your department with pride. Absolutely loved it!",
+      avatar_url: null,
+      approved: true,
+    },
+  ];
+};
+
+// Contact message submission helper
+export type ContactMessagePayload = {
+  name: string;
+  email: string;
+  message: string;
+};
+
+export const submitContactMessage = async (payload: ContactMessagePayload): Promise<{ success: boolean; error?: string }> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('contact_messages').insert([{ name: payload.name, email: payload.email, message: payload.message }]);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : 'Unknown error' };
+    }
+  }
+  return { success: false, error: 'Supabase not configured' };
+};
+
+// Optional: helper to submit a testimonial (stores with approved = false)
+export type SubmitTestimonialPayload = { name: string; role?: string | null; message: string; avatar_url?: string | null };
+export const submitTestimonial = async (payload: SubmitTestimonialPayload): Promise<{ success: boolean; error?: string }> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('testimonials').insert([{ name: payload.name, role: payload.role || null, message: payload.message, avatar_url: payload.avatar_url || null, approved: false }]);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : 'Unknown error' };
+    }
+  }
+  return { success: false, error: 'Supabase not configured' };
+};
