@@ -14,6 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import MatchCenter from "./pages/MatchCenter";
 import Team from "./pages/Team";
 import TeamDepartment from "./pages/TeamDepartment";
+import Profile from "./pages/Profile";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/match/:tournamentId/:matchId" element={<MatchCenter />} />
             <Route path="/team" element={<Team />} />
             <Route path="/team/:dept" element={<TeamDepartment />} />
+            <Route path="/profile/:id" element={<Profile />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

@@ -1,5 +1,5 @@
 import { tournaments, Tournament, Match } from "@/data/tournaments";
-import { departmentList, DepartmentTeam } from "@/data/teams";
+import { fetchDepartments, DepartmentTeam } from "@/data/teams";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { currentLeaderboards, SeasonLeaderboards } from "@/data/leaderboards";
 
@@ -76,7 +76,24 @@ export const fetchTeamsOverview = async (): Promise<UITeamOverview[]> => {
       // fall through to local
     }
   }
-  return departmentList.map((d) => ({ id: d.key, name: d.name, short: d.short, players: d.players.length }));
+  // fallback: try to load from data helper (may be empty if not configured)
+  // Only use fetchDepartments if it is not undefined and is a function
+  if (typeof fetchDepartments === "function") {
+    try {
+      const deps = await fetchDepartments();
+      if (deps && deps.length) return deps.map((d) => ({ id: String(d.key), name: d.name, short: d.short, players: d.players.length }));
+    } catch (e) {
+      // fallthrough
+    }
+  }
+  // final hardcoded fallback
+  return [
+    { id: "csit", name: "Computer Science & Information Technology", short: "CSIT", players: 0 },
+    { id: "cce", name: "Computer & Communication Engineering", short: "CCE", players: 0 },
+    { id: "pme", name: "Power & Mechanical Engineering", short: "PME", players: 0 },
+    { id: "eee", name: "Electrical & Electronic Engineering", short: "EEE", players: 0 },
+    { id: "mathematics", name: "Mathematics", short: "Mathematics", players: 0 },
+  ];
 };
 
 export const fetchDepartmentTeam = async (deptKey: string): Promise<DepartmentTeam | null> => {
@@ -96,7 +113,14 @@ export const fetchDepartmentTeam = async (deptKey: string): Promise<DepartmentTe
     } as DepartmentTeam;
     return dept;
   }
-  return departmentList.find((d) => d.key === (deptKey as DepartmentTeam['key'])) || null;
+  if (typeof fetchDepartments === "function") {
+    try {
+      const deps = await fetchDepartments();
+      return deps.find((d) => d.key === (deptKey as DepartmentTeam['key'])) || null;
+    } catch (e) {
+      return null;
+    }
+  }
 };
 
 export const fetchTournamentById = async (id: string): Promise<UITournament | null> => {
@@ -141,7 +165,13 @@ export const fetchHomeStats = async (): Promise<HomeStats> => {
   }
   // Local fallback using static data
   const teams = 5; // default to 5 teams as requested
-  const players = departmentList.reduce((s, d) => s + (d.players?.length || 0), 0);
+  let players = 0;
+  try {
+    const deps = await fetchDepartments();
+    players = deps.reduce((s, d) => s + (d.players?.length || 0), 0);
+  } catch (e) {
+    players = 0;
+  }
   const matches = tournaments.flatMap((t) => t.matches).length;
   const prizePool = 50000; // default prize pool set to 50,000 as requested
   return { teams, players, matches, prizePool };

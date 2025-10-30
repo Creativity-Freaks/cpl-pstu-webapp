@@ -15,16 +15,34 @@ const AdminPage = () => {
   const { user, logout } = useAuth();
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const [tournaments, setTournaments] = useState<Array<{ id: string; name: string }>>([]);
+  const [profiles, setProfiles] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<Array<{ profile_id: string; name?: string; role?: string }>>([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    Promise.all([
-      supabase.from("teams").select("id,name,short_name").order("name"),
-      supabase.from("tournaments").select("id,name").order("name"),
-    ]).then(([t1, t2]) => {
-      if (t1.data) setTeams(t1.data.map((t) => ({ id: t.id as string, name: (t.short_name || t.name) as string })));
-      if (t2.data) setTournaments(t2.data.map((t) => ({ id: t.id as string, name: t.name as string })));
-    }).catch(() => void 0);
+    (async () => {
+      try {
+        const [t1, t2] = await Promise.all([
+          supabase.from("teams").select("id,name,short_name").order("name"),
+          supabase.from("tournaments").select("id,name").order("name"),
+        ]);
+        if (t1.data) setTeams(t1.data.map((t: { id: string; name: string; short_name?: string }) => ({ id: t.id, name: t.short_name || t.name })));
+        if (t2.data) setTournaments(t2.data.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })));
+      } catch {
+        // Ignore errors
+      }
+      // fetch simple profiles list for assignment
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const r = await supabase.from('profiles').select('id, name').order('name');
+          if (r.data) setProfiles(r.data.map((p: { id: string; name?: string; email?: string }) => ({ id: p.id, name: p.name || p.email || 'Player' })));
+        } catch {
+          // Ignore errors
+        }
+      }
+    })();
   }, []);
 
   const [newTeam, setNewTeam] = useState({ name: "", short: "" });
@@ -46,6 +64,40 @@ const AdminPage = () => {
     if (error) return toast.error(error.message);
     toast.success("Match scheduled");
     setNewMatch({ tournament_id: "", team_a: "", team_b: "", date: "", venue: "" });
+  };
+
+  const loadTeamMembers = async (teamId: string | null) => {
+    if (!isSupabaseConfigured || !supabase || !teamId) { setTeamMembers([]); return; }
+    const { data, error } = await supabase.from('team_members').select('profile_id, role, profiles(name)').eq('team_id', teamId);
+    if (error) return toast.error(error.message);
+  setTeamMembers((data || []).map((m) => {
+    const profile = m.profiles && !Array.isArray(m.profiles) ? m.profiles : null;
+    return {
+      profile_id: m.profile_id,
+      name: profile?.name || 'Player',
+      role: m.role,
+    };
+  }));
+  };
+
+  useEffect(() => { if (selectedTeam) loadTeamMembers(selectedTeam); else setTeamMembers([]); }, [selectedTeam]);
+
+  const assignPlayer = async () => {
+    if (!isSupabaseConfigured || !supabase) return toast.error('Supabase not configured');
+    if (!selectedTeam || !selectedProfile) return toast.error('Select team and player');
+    const { error } = await supabase.from('team_members').insert([{ team_id: selectedTeam, profile_id: selectedProfile, role: 'Player' }]);
+    if (error) return toast.error(error.message);
+    toast.success('Player assigned');
+    loadTeamMembers(selectedTeam);
+  };
+
+  const removePlayer = async (profileId: string) => {
+    if (!isSupabaseConfigured || !supabase) return toast.error('Supabase not configured');
+    if (!selectedTeam) return toast.error('Select team first');
+    const { error } = await supabase.from('team_members').delete().eq('team_id', selectedTeam).eq('profile_id', profileId);
+    if (error) return toast.error(error.message);
+    toast.success('Player removed');
+    loadTeamMembers(selectedTeam);
   };
 
   return (
@@ -98,6 +150,52 @@ const AdminPage = () => {
               </CardHeader>
               <CardContent>
                 <Button variant="outline">View Registrations</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border hover:shadow-glow transition-all animate-fade-in-up">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-accent" /> Assign Players</CardTitle>
+                <CardDescription>Assign / remove players to teams</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label>Team</Label>
+                  <select className="w-full border rounded p-2 bg-background" value={selectedTeam || ""} onChange={(e) => setSelectedTeam(e.target.value || null)}>
+                    <option value="">Select team...</option>
+                    {teams.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Player</Label>
+                  <select className="w-full border rounded p-2 bg-background" value={selectedProfile || ""} onChange={(e) => setSelectedProfile(e.target.value || null)}>
+                    <option value="">Select player...</option>
+                    {profiles.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={assignPlayer} disabled={!selectedTeam || !selectedProfile} className="bg-gradient-accent">Assign</Button>
+                  <Button variant="outline" onClick={() => { if (selectedProfile) removePlayer(selectedProfile); }}>Remove</Button>
+                </div>
+
+                <div>
+                  <Label>Current Members</Label>
+                  {teamMembers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No members assigned.</p>
+                  ) : (
+                    <ul className="space-y-2 mt-2">
+                      {teamMembers.map((m) => (
+                        <li key={m.profile_id} className="flex items-center justify-between">
+                          <span>{m.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{m.role}</span>
+                            <Button size="sm" variant="ghost" onClick={() => removePlayer(m.profile_id)}>Remove</Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

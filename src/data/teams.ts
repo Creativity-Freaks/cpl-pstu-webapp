@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export type Player = {
   id: string;
   name: string;
@@ -19,49 +21,28 @@ export type DepartmentTeam = {
   players: Player[];
 };
 
-export const departments: Record<DepartmentKey, DepartmentTeam> = {
-  csit: {
-    key: "csit",
-    name: "Computer Science & Information Technology",
-    short: "CSIT",
-    description: "Tech-driven cricketing excellence. Where data meets discipline and passion.",
-    captain: undefined,
-    coach: undefined,
-    achievements: [],
-    players: [],
-  },
-  cce: {
-    key: "cce",
-    name: "Computer & Communication Engineering",
-    short: "CCE",
-    description: "Communication, coordination, and classy stroke play.",
-    achievements: [],
-    players: [],
-  },
-  pme: {
-    key: "pme",
-    name: "Power & Mechanical Engineering",
-    short: "PME",
-    description: "Power hitters with precision mechanics on the field.",
-    achievements: [],
-    players: [],
-  },
-  eee: {
-    key: "eee",
-    name: "Electrical & Electronic Engineering",
-    short: "EEE",
-    description: "Electrifying pace, charged fielding, and smart tactics.",
-    achievements: [],
-    players: [],
-  },
-  mathematics: {
-    key: "mathematics",
-    name: "Mathematics",
-    short: "Mathematics",
-    description: "Calculated shots, perfect angles, and strategic gameplay.",
-    achievements: [],
-    players: [],
-  },
-};
+export const fetchDepartments = async (): Promise<DepartmentTeam[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("teams")
+      .select("key:short_name, name, short:short_name, description, color, logo_url");
 
-export const departmentList: DepartmentTeam[] = Object.values(departments);
+    if (error) throw error;
+
+    // Map returned rows to DepartmentTeam shape (players/captain may be absent)
+    const rows = (data || []) as Array<Record<string, unknown>>;
+    return rows.map((r) => ({
+      key: ((r['key'] as string) || (r['short'] as string) || '') as DepartmentKey,
+      name: String(r['name'] || ''),
+      short: String((r['short'] as string) || (r['key'] as string) || ''),
+      description: String(r['description'] || ''),
+  captain: undefined,
+      coach: undefined,
+  achievements: undefined,
+      players: [],
+    })) as DepartmentTeam[];
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    return [];
+  }
+};
